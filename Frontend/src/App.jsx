@@ -3,7 +3,7 @@
 //  Single App.jsx file with all routing, state, and UI
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 // ─── API Config ───────────────────────────────────────────────
@@ -719,8 +719,55 @@ function PublishPage({ setPage, toast }) {
     racOrWaitingNumber: '', numberOfPassengers: 1, price: '',
   });
   const [passengers, setPassengers] = useState([{ gender: 'Male', age: '' }]);
+  // Station autosuggest
+const [boardingSuggestions, setBoardingSuggestions] = useState([]);
+const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+const debounceTimer = useRef(null);
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const fetchStations = (value, type) => {
+
+if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+debounceTimer.current = setTimeout(async () => {
+
+  if (!value) {
+    type === "boarding"
+      ? setBoardingSuggestions([])
+      : setDestinationSuggestions([]);
+    return;
+  }
+
+  try {
+
+    const { data } = await API.get("/stations", {
+      params: { query: value }
+    });
+
+    if (type === "boarding")
+      setBoardingSuggestions(data);
+    else
+      setDestinationSuggestions(data);
+
+  } catch (err) {
+    console.error(err);
+  }
+
+}, 300);
+};
+
+const set = k => e => {
+
+  const value = e.target.value;
+
+  setForm(f => ({ ...f, [k]: value }));
+
+  if (k === "boardingStation")
+    fetchStations(value, "boarding");
+
+  if (k === "destinationStation")
+    fetchStations(value, "destination");
+
+};
 
   const updatePassCount = e => {
     const n = parseInt(e.target.value);
@@ -745,7 +792,7 @@ function PublishPage({ setPage, toast }) {
     }
   };
 
-  if (!user) { setPage('auth'); return null; }
+ if (!user) { setPage('login'); return null; }
 
   return (
     <div className="publish-page">
@@ -765,11 +812,85 @@ function PublishPage({ setPage, toast }) {
           <div className="form-row">
             <div className="form-group">
               <label>Boarding Station *</label>
-              <input value={form.boardingStation} onChange={set('boardingStation')} placeholder="e.g. New Delhi" />
+              <div style={{ position: "relative" }}>
+
+<input
+  value={form.boardingStation}
+  onChange={set('boardingStation')}
+  placeholder="e.g. New Delhi"
+/>
+
+{boardingSuggestions.length > 0 && (
+  <div style={{
+    position: "absolute",
+    background: "white",
+    width: "100%",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    maxHeight: 220,
+    overflowY: "auto",
+    zIndex: 1000
+  }}>
+    {boardingSuggestions.map(st => (
+      <div
+        key={st._id}
+        style={{ padding: 10, cursor: "pointer" }}
+        onClick={() => {
+          setForm(f => ({
+            ...f,
+            boardingStation: `${st.code} - ${st.name}`
+          }));
+          setBoardingSuggestions([]);
+        }}
+      >
+        <strong>{st.code}</strong> - {st.name}
+      </div>
+    ))}
+  </div>
+)}
+
+</div>  
             </div>
             <div className="form-group">
               <label>Destination Station *</label>
-              <input value={form.destinationStation} onChange={set('destinationStation')} placeholder="e.g. Mumbai CST" />
+              <div style={{ position: "relative" }}>
+
+<input
+  value={form.destinationStation}
+  onChange={set('destinationStation')}
+  placeholder="e.g. Mumbai CST"
+/>
+
+{destinationSuggestions.length > 0 && (
+  <div style={{
+    position: "absolute",
+    background: "white",
+    width: "100%",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    maxHeight: 220,
+    overflowY: "auto",
+    zIndex: 1000
+  }}>
+    {destinationSuggestions.map(st => (
+      <div
+        key={st._id}
+        style={{ padding: 10, cursor: "pointer" }}
+        onClick={() => {
+          setForm(f => ({
+            ...f,
+            destinationStation: `${st.code} - ${st.name}`
+          }));
+          setDestinationSuggestions([]);
+        }}
+      >
+        <strong>{st.code}</strong> - {st.name}
+      </div>
+    ))}
+  </div>
+)}
+
+</div>
             </div>
           </div>
           <div className="form-row">
@@ -975,7 +1096,7 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
             {showContact ? '🙈 Hide Contact' : '🛒 Buy This Ticket'}
           </button>
         ) : (
-          <button className="btn btn-outline btn-sm" onClick={() => setPage('auth')}>
+          <button className="btn btn-outline btn-sm" onClick={() => setPage('login')}>
             🔍 View More Details
           </button>
         )}
@@ -1013,7 +1134,7 @@ function HomePage({ setPage, toast }) {
   // ✅ Autocomplete states
   const [boardingSuggestions, setBoardingSuggestions] = useState([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState([]);
-  const [debounceTimer, setDebounceTimer] = useState(null);
+  const debounceTimer = useRef(null);
 
   // ─── Fetch Tickets ─────────────────────────
   const fetchTickets = useCallback(async (params = {}) => {
@@ -1032,7 +1153,7 @@ function HomePage({ setPage, toast }) {
 
   // ─── Fetch Station Suggestions ─────────────
   const fetchStationSuggestions = (value, type) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     const timer = setTimeout(async () => {
       if (!value) {
@@ -1055,7 +1176,7 @@ function HomePage({ setPage, toast }) {
       }
     }, 300);
 
-    setDebounceTimer(timer);
+    debounceTimer.current = timer;
   };
 
   const handleSearch = () => {
@@ -1261,7 +1382,7 @@ function ProfilePage({ setPage, toast }) {
     }).catch(() => setLoading(false));
   }, [user]);
 
-  if (!user) { setPage('auth'); return null; }
+  if (!user) { setPage('login'); return null; }
 
   const deleteTicket = async (id) => {
     if (!window.confirm('Delete this ticket?')) return;
@@ -1474,7 +1595,7 @@ function Footer({ setPage }) {
         <div>
           <div className="footer-heading">Navigation</div>
           <div className="footer-link" onClick={() => setPage('home')}>Home</div>
-          <div className="footer-link" onClick={() => setPage('auth')}>Login / Register</div>
+          <div className="footer-link" onClick={() => setPage('login')}>Login / Register</div>
           <div className="footer-link" onClick={() => setPage('publish')}>Publish Ticket</div>
           <div className="footer-link" onClick={() => setPage('profile')}>My Profile</div>
         </div>

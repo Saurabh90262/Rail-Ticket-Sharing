@@ -20,11 +20,11 @@ mongoose.connect(process.env.MONGO_URI)
    User Schema
 ───────────────────────────────────────── */
 const userSchema = new mongoose.Schema({
-  firstName:  { type: String, required: true },
-  lastName:   { type: String, required: true },
-  email:      { type: String, required: true, unique: true },
-  mobile:     { type: String, required: true, unique: true },
-  password:   { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  mobile: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
@@ -33,20 +33,37 @@ const User = mongoose.model('User', userSchema);
    Ticket Schema
 ───────────────────────────────────────── */
 const ticketSchema = new mongoose.Schema({
-  userId:            { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  boardingStation:   { type: String, required: true },
-  destinationStation:{ type: String, required: true },
-  dateOfJourney:     { type: String, required: true },
-  trainName:         { type: String, required: true },
-  trainNumber:       { type: String, required: true },
-  departureTime:     { type: String, required: true },
-  classType:         { type: String, required: true },
-  ticketStatus:      { type: String, required: true },
-  racOrWaitingNumber:{ type: String, default: '' },
-  numberOfPassengers:{ type: Number, required: true },
-  passengers:        [{ gender: String, age: Number }],
-  price:             { type: Number, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+
+  boardingStation: { type: String, required: true },
+  destinationStation: { type: String, required: true },
+
+  dateOfJourney: { type: String, required: true },
+  trainName: { type: String, required: true },
+  trainNumber: { type: String, required: true },
+  departureTime: { type: String, required: true },
+
+  classType: { type: String, required: true },
+  ticketStatus: { type: String, required: true },
+
+  racOrWaitingNumber: { type: String, default: '' },
+
+  numberOfPassengers: { type: Number, required: true },
+
+  passengers: [
+    {
+      gender: String,
+      age: Number
+    }
+  ],
+
+  price: { type: Number, required: true }
+
 }, { timestamps: true });
+
+ticketSchema.index({ boardingStation: 1 });
+ticketSchema.index({ destinationStation: 1 });
+ticketSchema.index({ dateOfJourney: 1 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
 
@@ -56,10 +73,11 @@ const Ticket = mongoose.model('Ticket', ticketSchema);
 const stationSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true },
   name: { type: String, required: true },
-  region: { type: String }
+  region: String
 });
 
 stationSchema.index({ name: 1 });
+stationSchema.index({ code: 1 });
 
 const Station = mongoose.model('Station', stationSchema);
 
@@ -68,7 +86,9 @@ const Station = mongoose.model('Station', stationSchema);
 ───────────────────────────────────────── */
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  if (!token)
+    return res.status(401).json({ message: 'No token provided' });
 
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
@@ -79,10 +99,12 @@ const authMiddleware = (req, res, next) => {
 };
 
 /* ─────────────────────────────────────────
-   Auth Routes
+   AUTH ROUTES
 ───────────────────────────────────────── */
+
 app.post('/api/auth/register', async (req, res) => {
   try {
+
     const { firstName, lastName, email, mobile, password } = req.body;
 
     const hashed = await bcrypt.hash(password, 12);
@@ -113,25 +135,29 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        message: 'Email or Mobile already exists'
-      });
-    }
+
+    if (err.code === 11000)
+      return res.status(400).json({ message: 'Email or Mobile already exists' });
 
     res.status(500).json({ message: err.message });
+
   }
 });
 
+
 app.post('/api/auth/login', async (req, res) => {
+
   try {
+
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user)
       return res.status(400).json({ message: 'Invalid credentials' });
 
     const match = await bcrypt.compare(password, user.password);
+
     if (!match)
       return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -153,15 +179,22 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
+
 /* ─────────────────────────────────────────
-   Update Profile
+   UPDATE PROFILE
 ───────────────────────────────────────── */
+
 app.put('/api/users/update', authMiddleware, async (req, res) => {
+
   try {
+
     const { firstName, lastName, mobile } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -182,61 +215,85 @@ app.put('/api/users/update', authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        message: "Mobile number already in use"
-      });
-    }
+
+    if (err.code === 11000)
+      return res.status(400).json({ message: "Mobile number already in use" });
 
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
+
 /* ─────────────────────────────────────────
-   Station Search
+   STATION AUTOSUGGEST
 ───────────────────────────────────────── */
+
 app.get('/api/stations', async (req, res) => {
+
   try {
+
     const { query } = req.query;
+
     if (!query) return res.json([]);
 
     const q = query.trim();
 
     const stations = await Station.find({
       $or: [
-        { code: { $regex: q, $options: 'i' } },
+        { code: { $regex: '^' + q, $options: 'i' } },
         { name: { $regex: q, $options: 'i' } }
       ]
-    }).limit(10);
+    })
+      .sort({ name: 1 })
+      .limit(10);
 
     res.json(stations);
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
+
 /* ─────────────────────────────────────────
-   Ticket Routes
+   CREATE TICKET
 ───────────────────────────────────────── */
 
-// Create Ticket
 app.post('/api/tickets', authMiddleware, async (req, res) => {
+
   try {
+
     const ticket = await Ticket.create({
       ...req.body,
       userId: req.user.id
     });
+
     res.status(201).json(ticket);
+
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
-// Get All Tickets (with filters)
+
+/* ─────────────────────────────────────────
+   SEARCH TICKETS
+───────────────────────────────────────── */
+
 app.get('/api/tickets', async (req, res) => {
+
   try {
+
     const { boarding, destination, date } = req.query;
+
     const query = {};
 
     if (boarding)
@@ -255,13 +312,22 @@ app.get('/api/tickets', async (req, res) => {
     res.json(tickets);
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
-// ✅ Get Tickets By Logged-in User
+
+/* ─────────────────────────────────────────
+   USER TICKETS
+───────────────────────────────────────── */
+
 app.get('/api/tickets/user/:id', authMiddleware, async (req, res) => {
+
   try {
+
     if (req.user.id !== req.params.id)
       return res.status(403).json({ message: 'Not authorized' });
 
@@ -271,13 +337,22 @@ app.get('/api/tickets/user/:id', authMiddleware, async (req, res) => {
     res.json(tickets);
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
 
-// ✅ Delete Ticket
+
+/* ─────────────────────────────────────────
+   DELETE TICKET
+───────────────────────────────────────── */
+
 app.delete('/api/tickets/:id', authMiddleware, async (req, res) => {
+
   try {
+
     const ticket = await Ticket.findById(req.params.id);
 
     if (!ticket)
@@ -291,13 +366,18 @@ app.delete('/api/tickets/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Ticket deleted successfully' });
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
+
 });
+
 
 /* ───────────────────────────────────────── */
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
