@@ -285,10 +285,10 @@ app.get('/api/stations', async (req, res) => {
       },
 
       {
-        $match: {
-          searchText: { $regex: "^" + q }
-        }
-      },
+  $match: {
+    searchText: { $regex: q }
+  }
+},
 
       {
         $sort: {

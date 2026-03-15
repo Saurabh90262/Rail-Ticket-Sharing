@@ -593,6 +593,27 @@ const GlobalStyles = () => (
       display: flex; align-items: center; gap: 6px;
     }
     .breadcrumb span { color: var(--rail); }
+    .station-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+
+  background: white;
+  width: 100%;
+
+  border-radius: 10px;
+  border: 1px solid #ddd;
+
+  max-height: 240px;
+  overflow-y: auto;
+
+  z-index: 9999;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+  .station-dropdown div:hover{
+  background:#f5f5f5;
+}
   `}</style>
 );
 
@@ -881,31 +902,31 @@ const set = k => e => {
 />
 
 {boardingSuggestions.length > 0 && (
-  <div style={{
-    position: "absolute",
-    background: "white",
-    width: "100%",
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    maxHeight: 220,
-    overflowY: "auto",
-    zIndex: 1000
-  }}>
+  <div className="station-dropdown">
+
     {boardingSuggestions.map(st => (
       <div
         key={st._id}
-        style={{ padding: 10, cursor: "pointer" }}
-        onClick={() => {
-          setForm(f => ({
-            ...f,
-            boardingStation: `${st.code} - ${st.name}`
-          }));
-          setBoardingSuggestions([]);
+        style={{
+          padding: "10px 12px",
+          cursor: "pointer",
+          borderBottom: "1px solid #eee"
         }}
+        onMouseDown={() => {
+  setForm(f => ({
+    ...f,
+    boardingStation: `${st.code} - ${st.name}`
+  }));
+  setBoardingSuggestions([]);
+}}
       >
-        <strong>{st.code}</strong> - {st.name}
+        <strong>{st.code}</strong>
+        <span style={{ marginLeft: 6, color: "#555" }}>
+          {st.name}
+        </span>
       </div>
     ))}
+
   </div>
 )}
 
@@ -923,31 +944,31 @@ const set = k => e => {
 />
 
 {destinationSuggestions.length > 0 && (
-  <div style={{
-    position: "absolute",
-    background: "white",
-    width: "100%",
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    maxHeight: 220,
-    overflowY: "auto",
-    zIndex: 1000
-  }}>
+  <div className="station-dropdown">
+
     {destinationSuggestions.map(st => (
       <div
         key={st._id}
-        style={{ padding: 10, cursor: "pointer" }}
-        onClick={() => {
-          setForm(f => ({
-            ...f,
-            destinationStation: `${st.code} - ${st.name}`
-          }));
-          setDestinationSuggestions([]);
+        style={{
+          padding: "10px 12px",
+          cursor: "pointer",
+          borderBottom: "1px solid #eee"
         }}
+        onMouseDown={() => {
+  setForm(f => ({
+    ...f,
+    destinationStation: `${st.code} - ${st.name}`
+  }));
+  setDestinationSuggestions([]);
+}}
       >
-        <strong>{st.code}</strong> - {st.name}
+        <strong>{st.code}</strong>
+        <span style={{ marginLeft: 6, color: "#555" }}>
+          {st.name}
+        </span>
       </div>
     ))}
+
   </div>
 )}
 
@@ -1334,21 +1355,12 @@ const handleSearch = () => {
                 />
 
                 {boardingSuggestions.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    background: 'white',
-                    width: '100%',
-                    maxHeight: 220,
-                    overflowY: 'auto',
-                    borderRadius: 10,
-                    marginTop: 4,
-                    zIndex: 1000
-                  }}>
+                  <div className="station-dropdown">
                     {boardingSuggestions.map(st => (
                       <div
                         key={st._id}
                         style={{ padding: 10, cursor: 'pointer' }}
-                        onClick={() => {
+                        onMouseDown={() => {
                           setSearch(s => ({
                             ...s,
                             boarding: `${st.code} - ${st.name}`
@@ -1379,21 +1391,12 @@ const handleSearch = () => {
                 />
 
                 {destinationSuggestions.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    background: 'white',
-                    width: '100%',
-                    maxHeight: 220,
-                    overflowY: 'auto',
-                    borderRadius: 10,
-                    marginTop: 4,
-                    zIndex: 1000
-                  }}>
+                  <div className="station-dropdown">
                     {destinationSuggestions.map(st => (
                       <div
                         key={st._id}
                         style={{ padding: 10, cursor: 'pointer' }}
-                        onClick={() => {
+                        onMouseDown={() => {
                           setSearch(s => ({
                             ...s,
                             destination: `${st.code} - ${st.name}`
