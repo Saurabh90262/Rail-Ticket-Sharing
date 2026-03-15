@@ -70,14 +70,33 @@ const Ticket = mongoose.model('Ticket', ticketSchema);
 /* ─────────────────────────────────────────
    Station Schema
 ───────────────────────────────────────── */
+
 const stationSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true },
   name: { type: String, required: true },
-  region: String
+  region: String,
+
+  searchText: {
+    type: String,
+    index: true
+  }
+
 });
 
 stationSchema.index({ name: 1 });
 stationSchema.index({ code: 1 });
+
+/* 🔹 Create searchable text automatically */
+stationSchema.pre('save', function(next) {
+
+  this.searchText = (
+    this.code + " " +
+    this.name
+  ).toLowerCase();
+
+  next();
+
+});
 
 const Station = mongoose.model('Station', stationSchema);
 
@@ -227,7 +246,7 @@ app.put('/api/users/update', authMiddleware, async (req, res) => {
 
 
 /* ─────────────────────────────────────────
-   STATION AUTOSUGGEST
+   STATION AUTOSUGGEST (SMART SEARCH)
 ───────────────────────────────────────── */
 
 app.get('/api/stations', async (req, res) => {
@@ -236,18 +255,54 @@ app.get('/api/stations', async (req, res) => {
 
     const { query } = req.query;
 
-    if (!query) return res.json([]);
+    if (!query || query.length < 1)
+      return res.json([]);
 
-    const q = query.trim();
+    const q = query.toLowerCase().trim();
 
-    const stations = await Station.find({
-      $or: [
-        { code: { $regex: '^' + q, $options: 'i' } },
-        { name: { $regex: q, $options: 'i' } }
-      ]
-    })
-      .sort({ name: 1 })
-      .limit(10);
+    const stations = await Station.aggregate([
+
+      {
+        $addFields: {
+
+          codeMatch: {
+            $cond: [
+              { $regexMatch: { input: { $toLower: "$code" }, regex: "^" + q } },
+              1,
+              0
+            ]
+          },
+
+          nameStartMatch: {
+            $cond: [
+              { $regexMatch: { input: { $toLower: "$name" }, regex: "^" + q } },
+              1,
+              0
+            ]
+          }
+
+        }
+      },
+
+      {
+        $match: {
+          searchText: { $regex: q }
+        }
+      },
+
+      {
+        $sort: {
+          codeMatch: -1,
+          nameStartMatch: -1,
+          name: 1
+        }
+      },
+
+      {
+        $limit: 10
+      }
+
+    ]);
 
     res.json(stations);
 
@@ -289,18 +344,21 @@ app.post('/api/tickets', authMiddleware, async (req, res) => {
 ───────────────────────────────────────── */
 
 app.get('/api/tickets', async (req, res) => {
-
   try {
 
     const { boarding, destination, date } = req.query;
 
     const query = {};
 
-    if (boarding)
-      query.boardingStation = { $regex: boarding, $options: 'i' };
+    if (boarding) {
+      const code = boarding.split('-')[0].trim();
+      query.boardingStation = { $regex: code, $options: 'i' };
+    }
 
-    if (destination)
-      query.destinationStation = { $regex: destination, $options: 'i' };
+    if (destination) {
+      const code = destination.split('-')[0].trim();
+      query.destinationStation = { $regex: code, $options: 'i' };
+    }
 
     if (date)
       query.dateOfJourney = date;
@@ -312,11 +370,8 @@ app.get('/api/tickets', async (req, res) => {
     res.json(tickets);
 
   } catch (err) {
-
     res.status(500).json({ message: err.message });
-
   }
-
 });
 
 

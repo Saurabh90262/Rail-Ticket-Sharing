@@ -766,7 +766,7 @@ debounceTimer.current = setTimeout(async () => {
   try {
 
     const { data } = await API.get("/stations", {
-      params: { query: value }
+      params: { query: value.trim().toLowerCase() }
     });
 
     if (type === "boarding")
@@ -1196,8 +1196,8 @@ function HomePage({ setPage, toast }) {
 
       try {
         const { data } = await API.get('/stations', {
-          params: { query: value }
-        });
+  params: { query: value.trim().toLowerCase() }
+});
 
         type === 'boarding'
           ? setBoardingSuggestions(data)
@@ -1211,12 +1211,20 @@ function HomePage({ setPage, toast }) {
   };
 
   const handleSearch = () => {
-    const params = {};
-    if (search.boarding) params.boarding = search.boarding;
-    if (search.destination) params.destination = search.destination;
-    if (search.date) params.date = search.date;
-    fetchTickets(params);
-  };
+
+  const params = {};
+
+  if (search.boarding)
+    params.boarding = search.boarding.split('-')[0].trim();
+
+  if (search.destination)
+    params.destination = search.destination.split('-')[0].trim();
+
+  if (search.date)
+    params.date = search.date;
+
+  fetchTickets(params);
+};
 
   const handleClear = () => {
     setSearch({ boarding: '', destination: '', date: '' });
