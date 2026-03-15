@@ -242,20 +242,25 @@ const GlobalStyles = () => (
 
     /* Ticket Card */
     .ticket-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      transition: var(--transition);
-      position: relative;
-    }
-    .ticket-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-md);
-      border-color: rgba(232,51,74,0.25);
-    }
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.35s cubic-bezier(.21,.6,.35,1), 
+              box-shadow 0.35s ease, 
+              border-color 0.35s ease;
+  position: relative;
+  will-change: transform;
+  transform-origin: center;
+}
+
+.ticket-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 22px 60px rgba(13,15,26,0.22);
+  border-color: rgba(232,51,74,0.35);
+}
     .ticket-card-header {
       background: linear-gradient(135deg, #0d0f1a, #1a1d30);
       padding: 20px 22px 16px;
@@ -276,20 +281,38 @@ const GlobalStyles = () => (
       position: relative;
     }
     .route-line::after {
-      content: '🚂'; position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); font-size: 0.9rem;
-      background: #1a1d30; padding: 0 4px;
-    }
+  content: '🚂';
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  background: #1a1d30;
+  padding: 0 4px;
+  transition: left 0.8s cubic-bezier(.21,.6,.35,1);
+}
     .ticket-train-info {
       font-size: 0.8rem; opacity: 0.6;
       display: flex; gap: 16px; margin-top: 4px;
     }
     .ticket-date-badge {
-      position: absolute; top: 16px; right: 16px;
-      background: rgba(232,51,74,0.2); border: 1px solid rgba(232,51,74,0.3);
-      border-radius: 8px; padding: 4px 10px;
-      font-size: 0.75rem; color: #ff8090; font-weight: 600;
-    }
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  background: rgba(232,51,74,0.18);
+  border: 1px solid rgba(232,51,74,0.3);
+
+  border-radius: 8px;
+  padding: 4px 10px;
+
+  font-size: 0.75rem;
+  color: #ff8090;
+  font-weight: 600;
+
+  margin-bottom: 10px;
+  width: fit-content;
+}
     .ticket-card-body { padding: 20px 22px; }
     .ticket-meta {
       display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
@@ -1020,9 +1043,14 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
   return (
     <div className="ticket-card">
       <div className="ticket-card-header">
-        <div className="ticket-date-badge">
-          📅 {new Date(ticket.dateOfJourney).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-        </div>
+
+  {/* Date ABOVE route */}
+  <div className="ticket-date-badge">
+    📅 {new Date(ticket.dateOfJourney).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short'
+    })}
+  </div>
         <div className="ticket-route">
           <div>
             <div className="ticket-station-label">From</div>
