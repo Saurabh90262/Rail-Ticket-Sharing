@@ -286,7 +286,7 @@ app.get('/api/stations', async (req, res) => {
 
       {
         $match: {
-          searchText: { $regex: q }
+          searchText: { $regex: "^" + q }
         }
       },
 
@@ -338,9 +338,8 @@ app.post('/api/tickets', authMiddleware, async (req, res) => {
 
 });
 
-
 /* ─────────────────────────────────────────
-   SEARCH TICKETS
+   SEARCH TICKETS (SMART GROUPED RESULTS)
 ───────────────────────────────────────── */
 
 app.get('/api/tickets', async (req, res) => {
@@ -348,29 +347,50 @@ app.get('/api/tickets', async (req, res) => {
 
     const { boarding, destination, date } = req.query;
 
-    const query = {};
+    const boardingCode = boarding?.split('-')[0]?.trim();
+    const destinationCode = destination?.split('-')[0]?.trim();
 
-    if (boarding) {
-      const code = boarding.split('-')[0].trim();
-      query.boardingStation = { $regex: code, $options: 'i' };
-    }
+    const baseQuery = {};
 
-    if (destination) {
-      const code = destination.split('-')[0].trim();
-      query.destinationStation = { $regex: code, $options: 'i' };
-    }
+    if (boardingCode)
+      baseQuery.boardingStation = { $regex: boardingCode, $options: 'i' };
 
-    if (date)
-      query.dateOfJourney = date;
+    if (destinationCode)
+      baseQuery.destinationStation = { $regex: destinationCode, $options: 'i' };
 
-    const tickets = await Ticket.find(query)
+    /* ───────── Exact Date Matches ───────── */
+
+    let exactMatches = [];
+
+    if (date) {
+
+      exactMatches = await Ticket.find({
+        ...baseQuery,
+        dateOfJourney: date
+      })
       .populate('userId', 'firstName lastName email mobile')
       .sort({ createdAt: -1 });
 
-    res.json(tickets);
+    }
+
+    /* ───────── Other Available Options ───────── */
+
+    const otherOptions = await Ticket.find({
+      ...baseQuery,
+      ...(date ? { dateOfJourney: { $ne: date } } : {})
+    })
+    .populate('userId', 'firstName lastName email mobile')
+    .sort({ dateOfJourney: 1 });
+
+    res.json({
+      exactMatches,
+      otherOptions
+    });
 
   } catch (err) {
+
     res.status(500).json({ message: err.message });
+
   }
 });
 

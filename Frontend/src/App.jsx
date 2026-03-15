@@ -1158,7 +1158,8 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
 // ─── Home / Landing Page ──────────────────────────────────────
 function HomePage({ setPage, toast }) {
   const { user } = useAuth();
-  const [tickets, setTickets] = useState([]);
+  const [exactTickets, setExactTickets] = useState([]);
+const [otherTickets, setOtherTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState({ boarding: '', destination: '', date: '' });
 
@@ -1169,16 +1170,27 @@ function HomePage({ setPage, toast }) {
 
   // ─── Fetch Tickets ─────────────────────────
   const fetchTickets = useCallback(async (params = {}) => {
-    setLoading(true);
-    try {
-      const { data } = await API.get('/tickets', { params });
-      setTickets(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+
+  setLoading(true);
+
+  try {
+
+    const { data } = await API.get('/tickets', { params });
+
+    setExactTickets(data.exactMatches || []);
+    setOtherTickets(data.otherOptions || []);
+
+  } catch (e) {
+
+    console.error(e);
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+}, []);
 
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
 
@@ -1388,21 +1400,59 @@ function HomePage({ setPage, toast }) {
 
       {/* Tickets Section remains same */}
       <section className="section">
-        {loading ? (
-          <div className="loader-wrap"><div className="spinner" /></div>
-        ) : tickets.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🚂</div>
-            <div className="empty-title">No Tickets Found</div>
-          </div>
-        ) : (
-          <div className="tickets-grid">
-            {tickets.map(t => (
-              <TicketCard key={t._id} ticket={t} isLoggedIn={!!user} setPage={setPage} />
-            ))}
-          </div>
-        )}
-      </section>
+
+{loading ? (
+
+  <div className="loader-wrap"><div className="spinner" /></div>
+
+) : (
+
+  <>
+
+  {exactTickets.length > 0 && (
+    <>
+      <h2 className="section-title">🎯 Exact Match</h2>
+      <p className="section-sub">
+        Tickets available for your selected date
+      </p>
+
+      <div className="tickets-grid">
+        {exactTickets.map(t => (
+          <TicketCard key={t._id} ticket={t} isLoggedIn={!!user} setPage={setPage} />
+        ))}
+      </div>
+    </>
+  )}
+
+  {otherTickets.length > 0 && (
+    <>
+      <div style={{ marginTop: 60 }} />
+
+      <h2 className="section-title">🚆 Other Available Options</h2>
+      <p className="section-sub">
+        Same route but different travel dates
+      </p>
+
+      <div className="tickets-grid">
+        {otherTickets.map(t => (
+          <TicketCard key={t._id} ticket={t} isLoggedIn={!!user} setPage={setPage} />
+        ))}
+      </div>
+    </>
+  )}
+
+  {exactTickets.length === 0 && otherTickets.length === 0 && (
+    <div className="empty-state">
+      <div className="empty-icon">🚂</div>
+      <div className="empty-title">No Tickets Found</div>
+    </div>
+  )}
+
+  </>
+
+)}
+
+</section>
     </div>
   );
 }
@@ -1414,12 +1464,30 @@ function ProfilePage({ setPage, toast }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    API.get(`/tickets/user/${user.id}`).then(({ data }) => {
+
+  if (!user) return;
+
+  const loadTickets = async () => {
+    try {
+
+      const { data } = await API.get(`/tickets/user/${user.id}`);
+
       setTickets(data);
+
+    } catch (err) {
+
+      console.error(err);
+
+    } finally {
+
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [user]);
+
+    }
+  };
+
+  loadTickets();
+
+}, [user]);
 
   if (!user) { setPage('login'); return null; }
 
