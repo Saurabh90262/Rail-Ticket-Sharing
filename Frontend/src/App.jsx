@@ -291,6 +291,9 @@ const GlobalStyles = () => (
   padding: 0 4px;
   transition: left 0.8s cubic-bezier(.21,.6,.35,1);
 }
+  .ticket-card:hover .route-line::after {
+  left: calc(100% - 10px);
+}
     .ticket-train-info {
       font-size: 0.8rem; opacity: 0.6;
       display: flex; gap: 16px; margin-top: 4px;
