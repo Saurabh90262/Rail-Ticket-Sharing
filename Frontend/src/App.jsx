@@ -1082,7 +1082,7 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
               <span className={`meta-chip ${statusChip(ticket.ticketStatus)}`}>
                 {ticket.ticketStatus === 'Confirmed' ? '✅' : ticket.ticketStatus === 'RAC' ? '⚠️' : '⏳'} {ticket.ticketStatus}
               </span>
-              <span className="meta-chip chip-passenger">👥 {ticket.numberOfPassengers} Pax</span>
+              <span className="meta-chip chip-passenger">👥 {ticket.numberOfPassengers} Pas</span>
             </div>
             {ticket.ticketStatus !== 'Confirmed' && ticket.racOrWaitingNumber && (
               <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 12 }}>
