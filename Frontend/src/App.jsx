@@ -806,17 +806,50 @@ const set = k => e => {
   };
 
   const publish = async () => {
-    setError(''); setLoading(true);
-    try {
-      await API.post('/tickets', { ...form, passengers, numberOfPassengers: Number(form.numberOfPassengers), price: Number(form.price) });
-      toast('Ticket published successfully! 🎉');
-      setPage('home');
-    } catch (e) {
-      setError(e.response?.data?.message || 'Failed to publish ticket');
-    } finally {
-      setLoading(false);
-    }
-  };
+
+  if (
+    !form.boardingStation ||
+    !form.destinationStation ||
+    !form.dateOfJourney ||
+    !form.trainName ||
+    !form.trainNumber ||
+    !form.departureTime ||
+    !form.price
+  ) {
+    setError("Please fill all required fields ⚠️");
+    return;
+  }
+
+  if (form.boardingStation === form.destinationStation) {
+    setError("Boarding and destination cannot be the same 🚫");
+    return;
+  }
+
+  setError('');
+  setLoading(true);
+
+  try {
+
+    await API.post('/tickets', {
+      ...form,
+      passengers,
+      numberOfPassengers: Number(form.numberOfPassengers),
+      price: Number(form.price)
+    });
+
+    toast('Ticket published successfully! 🎉');
+    setPage('home');
+
+  } catch (e) {
+
+    setError(e.response?.data?.message || 'Failed to publish ticket');
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
  if (!user) { setPage('login'); return null; }
 
@@ -843,6 +876,7 @@ const set = k => e => {
 <input
   value={form.boardingStation}
   onChange={set('boardingStation')}
+  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
   placeholder="e.g. New Delhi"
 />
 
@@ -884,6 +918,7 @@ const set = k => e => {
 <input
   value={form.destinationStation}
   onChange={set('destinationStation')}
+  onBlur={() => setTimeout(() => setDestinationSuggestions([]), 150)}
   placeholder="e.g. Mumbai CST"
 />
 
@@ -1222,7 +1257,16 @@ const [otherTickets, setOtherTickets] = useState([]);
     debounceTimer.current = timer;
   };
 
-  const handleSearch = () => {
+const handleSearch = () => {
+
+  if (
+    search.boarding &&
+    search.destination &&
+    search.boarding === search.destination
+  ) {
+    toast("Boarding and destination cannot be the same 🚫");
+    return;
+  }
 
   const params = {};
 
@@ -1279,7 +1323,8 @@ const [otherTickets, setOtherTickets] = useState([]);
                   Boarding Station
                 </label>
                 <input
-                  value={search.boarding}
+  value={search.boarding}
+  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
                   onChange={e => {
                     setSearch(s => ({ ...s, boarding: e.target.value }));
                     fetchStationSuggestions(e.target.value, 'boarding');
