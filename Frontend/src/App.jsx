@@ -643,7 +643,7 @@ function Navbar({ page, setPage }) {
     className="logo-icon" 
     style={{ background: 'transparent', boxShadow: 'none', width: '42px', height: '42px' }} 
   />
-  Rail<span>Share</span>
+  Train<span>Expert</span>
 </div>
       <div className="nav-right">
         {user ? (
@@ -1004,7 +1004,7 @@ const set = k => e => {
         <div className="section-header">
           <div className="breadcrumb">Home <span>›</span> Publish Ticket</div>
           <h1 className="form-title">Publish Your Ticket</h1>
-          <p className="form-sub">Share your extra railway ticket with people who need it.</p>
+          <p className="form-sub">Share your extra Train ticket with people who need it.</p>
         </div>
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 
@@ -1552,7 +1552,7 @@ const handleSearch = () => {
         <div className="hero-content">
 
           <div className="hero-badge">
-            🇮🇳 India's Railway Ticket Sharing Community
+            🇮🇳 India's Train Ticket Sharing Community
           </div>
 
           <h1 className="hero-title">
@@ -1561,7 +1561,7 @@ const handleSearch = () => {
           </h1>
 
           <p className="hero-sub">
-            Have an extra railway ticket? Publish it here. Need a ticket? Search and connect instantly.
+            Have an extra Train ticket? Publish it here. Need a ticket? Search and connect instantly.
           </p>
 
           {/* 🔍 Search Box */}
@@ -1790,7 +1790,7 @@ function ProfilePage({ setPage, toast }) {
 </div>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>{user?.firstName || ''} {user?.lastName || ''}</h2>
-            <div style={{ opacity: 0.6, fontSize: '0.9rem', marginTop: 4 }}>Railway Ticket Sharer</div>
+            <div style={{ opacity: 0.6, fontSize: '0.9rem', marginTop: 4 }}>Train Ticket Sharer</div>
           </div>
         </div>
         <div className="profile-body">
@@ -1972,12 +1972,12 @@ function Footer({ setPage }) {
     <footer>
       <div className="footer-grid">
         <div>
-          <div className="footer-brand">Rail<span>Share</span> 🚆</div>
+          <div className="footer-brand">Train<span>Expert</span> 🚆</div>
           <p className="footer-desc">
-            India's community platform for sharing extra railway tickets. Helping travellers connect, save money, and travel smarter.
+            India's community platform for sharing extra train tickets. Helping travellers connect, save money, and travel smarter.
           </p>
           <div style={{ marginTop: 20, fontSize: '0.85rem' }}>
-            <div>📧 support@railshare.in</div>
+            <div>📧 support@trainexpert.in</div>
             <div style={{ marginTop: 6 }}>📱 +91 98765 43210</div>
           </div>
         </div>
@@ -1990,9 +1990,9 @@ function Footer({ setPage }) {
         </div>
         <div>
           <div className="footer-heading">Developer</div>
-          <div className="footer-link">📧 dev@railshare.in</div>
-          <div className="footer-link">🐙 github.com/railshare</div>
-          <div className="footer-link">💼 linkedin.com/railshare</div>
+          <div className="footer-link">📧 dev@trainexpert.in</div>
+          <div className="footer-link">🐙 github.com/trainexpert</div>
+          <div className="footer-link">💼 linkedin.com/trainexpert</div>
           <div style={{ marginTop: 20, fontSize: '0.78rem', opacity: 0.5, lineHeight: 1.7 }}>
             Built with ❤️ using<br />
             MongoDB · Express · React · Node.js
@@ -2000,7 +2000,7 @@ function Footer({ setPage }) {
         </div>
       </div>
       <div className="footer-bottom">
-        <div>© {new Date().getFullYear()} RailShare. All rights reserved.</div>
+        <div>© {new Date().getFullYear()} TrainExpert. All rights reserved.</div>
         <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>
           Made for Indian Railways passengers 🇮🇳
         </div>

@@ -191,12 +191,12 @@ app.post('/api/auth/request-otp', async (req, res) => {
     const { otp, token } = generateOTPToken(email);
 
     await transporter.sendMail({
-      from: `"RailShare" <${process.env.EMAIL_USER}>`,
+      from: `"TrainExpert" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `${otp} is your RailShare Verification Code`,
+      subject: `${otp} is your TrainExpert Verification Code`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
-          <h2 style="color: #0d0f1a;">RailShare Verification</h2>
+          <h2 style="color: #0d0f1a;">TrainExpert Verification</h2>
           <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
           <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
             <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
