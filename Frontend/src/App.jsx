@@ -1208,7 +1208,7 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
 
             {ticket.ticketStatus !== 'Confirmed' && ticket.racOrWaitingNumber && (
               <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 12 }}>
-                Number: <strong>{ticket.racOrWaitingNumber}</strong>
+                RAC/WL Status: <strong>{ticket.racOrWaitingNumber}</strong>
               </div>
             )}
 
