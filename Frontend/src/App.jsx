@@ -637,9 +637,14 @@ function Navbar({ page, setPage }) {
   return (
     <nav className="navbar">
       <div className="logo" onClick={() => setPage('home')}>
-        <div className="logo-icon">🚆</div>
-        Rail<span>Share</span>
-      </div>
+  <img 
+    src="/train-animated.gif" 
+    alt="Train Logo" 
+    className="logo-icon" 
+    style={{ background: 'transparent', boxShadow: 'none', width: '42px', height: '42px' }} 
+  />
+  Rail<span>Share</span>
+</div>
       <div className="nav-right">
         {user ? (
           <div className="profile-menu" onClick={e => e.stopPropagation()}>
