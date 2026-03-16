@@ -388,23 +388,89 @@ app.get('/api/tickets', async (req, res) => {
 
     if (date) {
 
-      exactMatches = await Ticket.find({
-        ...baseQuery,
-        dateOfJourney: date
-      })
-      .populate('userId', 'firstName lastName email mobile')
-      .sort({ createdAt: -1 });
+      exactMatches = await Ticket.aggregate([
+  {
+    $match: {
+      ...baseQuery,
+      dateOfJourney: date
+    }
+  },
+  {
+    $addFields: {
+      statusPriority: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$ticketStatus", "Confirmed"] }, then: 1 },
+            { case: { $eq: ["$ticketStatus", "RAC"] }, then: 2 },
+            { case: { $eq: ["$ticketStatus", "Waiting List"] }, then: 3 }
+          ],
+          default: 4
+        }
+      }
+    }
+  },
+  {
+    $sort: {
+      statusPriority: 1,
+      createdAt: -1
+    }
+  },
+  {
+    $lookup: {
+      from: "users",
+      localField: "userId",
+      foreignField: "_id",
+      as: "userId"
+    }
+  },
+  {
+    $unwind: "$userId"
+  }
+]);
 
     }
 
     /* ───────── Other Available Options ───────── */
 
-    const otherOptions = await Ticket.find({
+    const otherOptions = await Ticket.aggregate([
+  {
+    $match: {
       ...baseQuery,
       ...(date ? { dateOfJourney: { $ne: date } } : {})
-    })
-    .populate('userId', 'firstName lastName email mobile')
-    .sort({ dateOfJourney: 1 });
+    }
+  },
+  {
+    $addFields: {
+      statusPriority: {
+        $switch: {
+          branches: [
+            { case: { $eq: ["$ticketStatus", "Confirmed"] }, then: 1 },
+            { case: { $eq: ["$ticketStatus", "RAC"] }, then: 2 },
+            { case: { $eq: ["$ticketStatus", "Waiting List"] }, then: 3 }
+          ],
+          default: 4
+        }
+      }
+    }
+  },
+  {
+    $sort: {
+      statusPriority: 1,
+      dateOfJourney: 1
+    }
+  },
+  {
+    $lookup: {
+      from: "users",
+      localField: "userId",
+      foreignField: "_id",
+      as: "userId"
+    }
+  },
+  {
+    $unwind: "$userId"
+  }
+]);
 
     res.json({
       exactMatches,
