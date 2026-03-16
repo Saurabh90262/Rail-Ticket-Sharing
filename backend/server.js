@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cron = require('node-cron');
 require('dotenv').config();
 
 const app = express();
@@ -66,6 +67,29 @@ ticketSchema.index({ destinationStation: 1 });
 ticketSchema.index({ dateOfJourney: 1 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
+/* ─────────────────────────────────────────
+   AUTO DELETE OLD TICKETS
+───────────────────────────────────────── */
+
+cron.schedule('0 3 * * *', async () => {
+
+  try {
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const result = await Ticket.deleteMany({
+      dateOfJourney: { $lt: today }
+    });
+
+    console.log(`🧹 Old tickets deleted: ${result.deletedCount}`);
+
+  } catch (err) {
+
+    console.error("Auto delete error:", err);
+
+  }
+
+});
 
 /* ─────────────────────────────────────────
    Station Schema
