@@ -65,10 +65,32 @@ const GlobalStyles = () => (
 
     h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; line-height: 1.2; }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--cloud); }
-    ::-webkit-scrollbar-thumb { background: var(--rail); border-radius: 3px; }
+    /* Premium TrainExpert Scrollbar */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--rail) transparent;
+    }
+
+    ::-webkit-scrollbar { 
+      width: 10px; 
+    }
+    
+    ::-webkit-scrollbar-track { 
+      background: transparent; 
+    }
+    
+    ::-webkit-scrollbar-thumb { 
+      background: linear-gradient(180deg, var(--rail), var(--rail-dark)); 
+      border-radius: 10px; 
+      border: 3px solid rgba(0,0,0,0); 
+      background-clip: padding-box;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover { 
+      background: var(--rail-dark); 
+      border: 2px solid rgba(0,0,0,0); 
+      background-clip: padding-box;
+    }
 
     /* Navbar */
     .navbar {
