@@ -677,26 +677,58 @@ function Navbar({ page, setPage }) {
   );
 }
 
-// ─── Auth Page (Login + Register) ─────────────────────────────
+// ─── Auth Page (Login + Register + Forgot Password) ───────────
 function AuthPage({ setPage, toast, mode }) {
   const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(mode !== 'register');
+  const [isForgot, setIsForgot] = useState(false);
+  
+  // OTP States
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpToken, setOtpToken] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', mobile: '', password: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', mobile: '', password: '', otp: '' });
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
+  // Step 1: Ask backend to email the OTP
+  const requestOtp = async () => {
+    if (!form.email) return setError('Email is required');
+    setError(''); setLoading(true);
+    try {
+      const type = isForgot ? 'forgot' : 'register';
+      const { data } = await API.post('/auth/request-otp', { email: form.email, type });
+      
+      setOtpToken(data.token); // Store the stateless token
+      setOtpSent(true);
+      toast('OTP sent to your email! 📧');
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Submit final details (Login, Verify Register, or Reset Pass)
   const submit = async () => {
     setError(''); setLoading(true);
     try {
       if (isLogin) {
+        // Standard Login
         const { data } = await API.post('/auth/login', { email: form.email, password: form.password });
         login(data.token, data.user);
         toast('Welcome back, ' + data.user.firstName + '! 👋');
         setPage('home');
+      } else if (isForgot) {
+        // Reset Password
+        await API.post('/auth/reset-password', { email: form.email, password: form.password, otp: form.otp, otpToken });
+        toast('Password reset successful! You can now login. ✅');
+        setIsForgot(false); setIsLogin(true); setOtpSent(false);
       } else {
-        const { data } = await API.post('/auth/register', form);
+        // Verify & Register
+        const { data } = await API.post('/auth/register-verify', { ...form, otpToken });
         login(data.token, data.user);
         toast('Account created! Welcome aboard 🚆');
         setPage('home');
@@ -711,44 +743,93 @@ function AuthPage({ setPage, toast, mode }) {
   return (
     <div className="auth-page">
       <div className="form-wrapper">
-        <div className="form-title">{isLogin ? 'Welcome Back' : 'Create Account'}</div>
-        <div className="form-sub">{isLogin ? 'Login to view full ticket details & connect with sellers.' : 'Join thousands sharing railway tickets across India.'}</div>
+        <div className="form-title">
+          {isForgot ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
+        </div>
+        <div className="form-sub">
+          {isForgot ? 'We will send an OTP to your email.' : isLogin ? 'Login to view full ticket details.' : 'Join thousands sharing railway tickets.'}
+        </div>
+        
         {error && <div className="alert alert-error">⚠️ {error}</div>}
-        {!isLogin && (
-          <div className="form-row">
-            <div className="form-group">
-              <label>First Name</label>
-              <input value={form.firstName} onChange={set('firstName')} placeholder="Arjun" />
-            </div>
-            <div className="form-group">
-              <label>Last Name</label>
-              <input value={form.lastName} onChange={set('lastName')} placeholder="Sharma" />
-            </div>
-          </div>
-        )}
+
         <div className="form-group">
           <label>Email Address</label>
-          <input type="email" value={form.email} onChange={set('email')} placeholder="arjun@email.com" />
+          <input type="email" value={form.email} onChange={set('email')} placeholder="email@example.com" disabled={otpSent} />
         </div>
-        {!isLogin && (
+
+        {/* Hide extra fields if login, forgot password, or if OTP is already sent */}
+        {!isLogin && !isForgot && !otpSent && (
+          <>
+            <div className="form-row">
+              <div className="form-group">
+                <label>First Name</label>
+                <input value={form.firstName} onChange={set('firstName')} placeholder="Arjun" />
+              </div>
+              <div className="form-group">
+                <label>Last Name</label>
+                <input value={form.lastName} onChange={set('lastName')} placeholder="Sharma" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Mobile Number</label>
+              <input type="tel" value={form.mobile} onChange={set('mobile')} placeholder="9876543210" />
+            </div>
+          </>
+        )}
+
+        {/* Show password field for login, or after OTP is sent */}
+        {(isLogin || otpSent) && (
           <div className="form-group">
-            <label>Mobile Number</label>
-            <input type="tel" value={form.mobile} onChange={set('mobile')} placeholder="9876543210" />
+            <label>{isForgot ? 'Create New Password' : 'Password'}</label>
+            <input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" />
           </div>
         )}
-        <div className="form-group">
-          <label>Password</label>
-          <input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" />
-        </div>
-        <button className="btn btn-primary btn-full" onClick={submit} disabled={loading}>
-          {loading ? '⏳ Please wait...' : isLogin ? '🚂 Login' : '✨ Create Account'}
-        </button>
+
+        {/* Show OTP input only if OTP was sent */}
+        {otpSent && (
+          <div className="form-group" style={{ animation: 'slideUp 0.3s ease' }}>
+            <label>Enter 6-Digit OTP</label>
+            <input 
+              value={form.otp} 
+              onChange={set('otp')} 
+              maxLength="6" 
+              placeholder="123456"
+              style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }} 
+            />
+          </div>
+        )}
+
+        {/* Conditional Button: Request OTP vs Submit */}
+        {!otpSent && !isLogin ? (
+          <button className="btn btn-primary btn-full" onClick={requestOtp} disabled={loading}>
+            {loading ? '⏳ Sending...' : '✉️ Send Verification OTP'}
+          </button>
+        ) : (
+          <button className="btn btn-primary btn-full" onClick={submit} disabled={loading}>
+            {loading ? '⏳ Please wait...' : isLogin ? '🚂 Login' : isForgot ? '🔐 Reset Password' : '✨ Verify & Register'}
+          </button>
+        )}
+
         <div className="auth-toggle">
+          {isLogin && (
+            <div style={{ marginBottom: 12 }}>
+              <button onClick={() => { setIsForgot(true); setIsLogin(false); setError(''); }}>
+                Forgot Password?
+              </button>
+            </div>
+          )}
+          
           {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => { setPage(isLogin ? 'register' : 'login'); setError(''); }}>
+          <button onClick={() => { 
+            setIsLogin(!isLogin); 
+            setIsForgot(false); 
+            setOtpSent(false); 
+            setError(''); 
+          }}>
             {isLogin ? 'Register here' : 'Login here'}
           </button>
         </div>
+        
       </div>
     </div>
   );

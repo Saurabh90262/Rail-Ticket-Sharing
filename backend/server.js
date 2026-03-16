@@ -4,6 +4,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cron = require('node-cron');
+const nodemailer = require('nodemailer'); // 👈 NEW
+const crypto = require('crypto');         // 👈 NEW
 require('dotenv').config();
 
 const app = express();
@@ -142,48 +144,114 @@ const authMiddleware = (req, res, next) => {
 };
 
 /* ─────────────────────────────────────────
+   OTP & EMAIL SETUP
+───────────────────────────────────────── */
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+const generateOTPToken = (email) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const hash = crypto.createHmac('sha256', process.env.OTP_SECRET).update(otp).digest('hex');
+  // Token valid for 5 mins
+  const token = jwt.sign({ email, hash }, process.env.JWT_SECRET, { expiresIn: '5m' });
+  return { otp, token };
+};
+
+const verifyOTP = (otp, token, email) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const hash = crypto.createHmac('sha256', process.env.OTP_SECRET).update(otp).digest('hex');
+    return decoded.email === email && decoded.hash === hash;
+  } catch (err) {
+    return false;
+  }
+};
+
+/* ─────────────────────────────────────────
    AUTH ROUTES
 ───────────────────────────────────────── */
 
-app.post('/api/auth/register', async (req, res) => {
-  try {
+/* ─────────────────────────────────────────
+   AUTH ROUTES
+───────────────────────────────────────── */
 
-    const { firstName, lastName, email, mobile, password } = req.body;
+// 1. Request OTP (For Register or Forgot Password)
+app.post('/api/auth/request-otp', async (req, res) => {
+  try {
+    const { email, type } = req.body; 
+    
+    const userExists = await User.findOne({ email });
+    if (type === 'register' && userExists) return res.status(400).json({ message: 'User already exists. Please login.' });
+    if (type === 'forgot' && !userExists) return res.status(400).json({ message: 'User not found.' });
+
+    const { otp, token } = generateOTPToken(email);
+
+    await transporter.sendMail({
+      from: `"RailShare" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `${otp} is your RailShare Verification Code`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
+          <h2 style="color: #0d0f1a;">RailShare Verification</h2>
+          <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
+          <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
+          </div>
+          <p style="font-size: 0.8rem; color: #999;">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      `
+    });
+
+    res.json({ token, message: 'OTP sent to email' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error sending email' });
+  }
+});
+
+// 2. Verify OTP and Register
+app.post('/api/auth/register-verify', async (req, res) => {
+  try {
+    const { firstName, lastName, email, mobile, password, otp, otpToken } = req.body;
+    
+    if (!verifyOTP(otp, otpToken, email)) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
 
     const hashed = await bcrypt.hash(password, 12);
-
-    const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      mobile,
-      password: hashed
-    });
-
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
+    const user = await User.create({ firstName, lastName, email, mobile, password: hashed });
+    
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    
     res.status(201).json({
       token,
-      user: {
-        id: user._id,
-        firstName,
-        lastName,
-        email,
-        mobile
-      }
+      user: { id: user._id, firstName, lastName, email, mobile }
     });
-
   } catch (err) {
-
-    if (err.code === 11000)
-      return res.status(400).json({ message: 'Email or Mobile already exists' });
-
+    if (err.code === 11000) return res.status(400).json({ message: 'Email or Mobile already exists' });
     res.status(500).json({ message: err.message });
+  }
+});
 
+// 3. Verify OTP and Reset Password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, password, otp, otpToken } = req.body;
+
+    if (!verifyOTP(otp, otpToken, email)) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    await User.findOneAndUpdate({ email }, { password: hashed });
+    
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Update failed' });
   }
 });
 
