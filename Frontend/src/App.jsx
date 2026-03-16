@@ -678,6 +678,7 @@ function Navbar({ page, setPage }) {
 }
 
 // ─── Auth Page (Login + Register + Forgot Password) ───────────
+// ─── Auth Page (Login + Register + Forgot Password) ───────────
 function AuthPage({ setPage, toast, mode }) {
   const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(mode !== 'register');
@@ -686,6 +687,7 @@ function AuthPage({ setPage, toast, mode }) {
   // OTP States
   const [otpSent, setOtpSent] = useState(false);
   const [otpToken, setOtpToken] = useState('');
+  const [timer, setTimer] = useState(0); 
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -693,17 +695,36 @@ function AuthPage({ setPage, toast, mode }) {
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  // Step 1: Ask backend to email the OTP
-  const requestOtp = async () => {
-    if (!form.email) return setError('Email is required');
+  useEffect(() => {
+    let interval;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prevTime) => prevTime - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  // Step 1: Ask backend to email the OTP (WITH VALIDATION)
+  const requestOtp = async (isResend = false) => {
+    // 🚨 FRONTEND VALIDATION: Check required fields before sending OTP
+    if (!form.email) return setError('Email address is required ⚠️');
+    
+    if (!isLogin && !isForgot) { // If Registering
+      if (!form.firstName || !form.lastName || !form.mobile) {
+        return setError('Please fill all personal details before requesting OTP ⚠️');
+      }
+    }
+
     setError(''); setLoading(true);
     try {
       const type = isForgot ? 'forgot' : 'register';
       const { data } = await API.post('/auth/request-otp', { email: form.email, type });
       
-      setOtpToken(data.token); // Store the stateless token
+      setOtpToken(data.token); 
       setOtpSent(true);
-      toast('OTP sent to your email! 📧');
+      setTimer(60); 
+      toast(isResend ? 'New OTP sent! 📧' : 'OTP sent to your email! 📧');
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to send OTP');
     } finally {
@@ -711,23 +732,29 @@ function AuthPage({ setPage, toast, mode }) {
     }
   };
 
-  // Step 2: Submit final details (Login, Verify Register, or Reset Pass)
+  // Step 2: Submit final details (WITH VALIDATION)
   const submit = async () => {
+    // 🚨 FRONTEND VALIDATION: Check passwords and OTP
+    if (isLogin) {
+      if (!form.email || !form.password) return setError('Email and password are required ⚠️');
+    } else {
+      if (!form.password) return setError('Please Enter a password ⚠️');
+      if (form.password.length < 6) return setError('Password must be at least 6 characters ⚠️');
+      if (!form.otp) return setError('Please enter the 6-digit OTP ⚠️');
+    }
+
     setError(''); setLoading(true);
     try {
       if (isLogin) {
-        // Standard Login
         const { data } = await API.post('/auth/login', { email: form.email, password: form.password });
         login(data.token, data.user);
         toast('Welcome back, ' + data.user.firstName + '! 👋');
         setPage('home');
       } else if (isForgot) {
-        // Reset Password
         await API.post('/auth/reset-password', { email: form.email, password: form.password, otp: form.otp, otpToken });
         toast('Password reset successful! You can now login. ✅');
-        setIsForgot(false); setIsLogin(true); setOtpSent(false);
+        setIsForgot(false); setIsLogin(true); setOtpSent(false); setTimer(0);
       } else {
-        // Verify & Register
         const { data } = await API.post('/auth/register-verify', { ...form, otpToken });
         login(data.token, data.user);
         toast('Account created! Welcome aboard 🚆');
@@ -750,14 +777,13 @@ function AuthPage({ setPage, toast, mode }) {
           {isForgot ? 'We will send an OTP to your email.' : isLogin ? 'Login to view full ticket details.' : 'Join thousands sharing railway tickets.'}
         </div>
         
-        {error && <div className="alert alert-error">⚠️ {error}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="form-group">
           <label>Email Address</label>
           <input type="email" value={form.email} onChange={set('email')} placeholder="email@example.com" disabled={otpSent} />
         </div>
 
-        {/* Hide extra fields if login, forgot password, or if OTP is already sent */}
         {!isLogin && !isForgot && !otpSent && (
           <>
             <div className="form-row">
@@ -777,7 +803,6 @@ function AuthPage({ setPage, toast, mode }) {
           </>
         )}
 
-        {/* Show password field for login, or after OTP is sent */}
         {(isLogin || otpSent) && (
           <div className="form-group">
             <label>{isForgot ? 'Create New Password' : 'Password'}</label>
@@ -785,7 +810,6 @@ function AuthPage({ setPage, toast, mode }) {
           </div>
         )}
 
-        {/* Show OTP input only if OTP was sent */}
         {otpSent && (
           <div className="form-group" style={{ animation: 'slideUp 0.3s ease' }}>
             <label>Enter 6-Digit OTP</label>
@@ -796,12 +820,25 @@ function AuthPage({ setPage, toast, mode }) {
               placeholder="123456"
               style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }} 
             />
+            
+            <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '0.85rem' }}>
+              {timer > 0 ? (
+                <span style={{ color: 'var(--mist)' }}>Resend OTP in {timer}s</span>
+              ) : (
+                <button 
+                  onClick={() => requestOtp(true)} 
+                  disabled={loading}
+                  style={{ background: 'none', border: 'none', color: 'var(--rail)', fontWeight: '600', cursor: 'pointer', padding: 0 }}
+                >
+                  Resend OTP
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Conditional Button: Request OTP vs Submit */}
         {!otpSent && !isLogin ? (
-          <button className="btn btn-primary btn-full" onClick={requestOtp} disabled={loading}>
+          <button className="btn btn-primary btn-full" onClick={() => requestOtp(false)} disabled={loading}>
             {loading ? '⏳ Sending...' : '✉️ Send Verification OTP'}
           </button>
         ) : (
@@ -824,6 +861,7 @@ function AuthPage({ setPage, toast, mode }) {
             setIsLogin(!isLogin); 
             setIsForgot(false); 
             setOtpSent(false); 
+            setTimer(0);
             setError(''); 
           }}>
             {isLogin ? 'Register here' : 'Login here'}

@@ -176,14 +176,13 @@ const verifyOTP = (otp, token, email) => {
    AUTH ROUTES
 ───────────────────────────────────────── */
 
-/* ─────────────────────────────────────────
-   AUTH ROUTES
-───────────────────────────────────────── */
-
 // 1. Request OTP (For Register or Forgot Password)
 app.post('/api/auth/request-otp', async (req, res) => {
   try {
     const { email, type } = req.body; 
+    
+    // 🚨 BACKEND VALIDATION
+    if (!email) return res.status(400).json({ message: 'Email is required' });
     
     const userExists = await User.findOne({ email });
     if (type === 'register' && userExists) return res.status(400).json({ message: 'User already exists. Please login.' });
@@ -209,6 +208,7 @@ app.post('/api/auth/request-otp', async (req, res) => {
 
     res.json({ token, message: 'OTP sent to email' });
   } catch (err) {
+    console.error("🚨 OTP Email Error:", err);
     res.status(500).json({ message: 'Error sending email' });
   }
 });
@@ -217,6 +217,14 @@ app.post('/api/auth/request-otp', async (req, res) => {
 app.post('/api/auth/register-verify', async (req, res) => {
   try {
     const { firstName, lastName, email, mobile, password, otp, otpToken } = req.body;
+    
+    // 🚨 BACKEND VALIDATION
+    if (!firstName || !lastName || !email || !mobile || !password || !otp || !otpToken) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
     
     if (!verifyOTP(otp, otpToken, email)) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
@@ -242,6 +250,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { email, password, otp, otpToken } = req.body;
 
+    // 🚨 BACKEND VALIDATION
+    if (!email || !password || !otp || !otpToken) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    }
+
     if (!verifyOTP(otp, otpToken, email)) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
@@ -255,28 +271,23 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-
+// 4. Login
 app.post('/api/auth/login', async (req, res) => {
-
   try {
-
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // 🚨 BACKEND VALIDATION
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
-    if (!user)
-      return res.status(400).json({ message: 'Invalid credentials' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!match)
-      return res.status(400).json({ message: 'Invalid credentials' });
-
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       token,
@@ -288,13 +299,9 @@ app.post('/api/auth/login', async (req, res) => {
         mobile: user.mobile
       }
     });
-
   } catch (err) {
-
     res.status(500).json({ message: err.message });
-
   }
-
 });
 
 
