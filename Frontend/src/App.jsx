@@ -46,7 +46,11 @@ const GlobalStyles = () => (
       --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
 
-    html { scroll-behavior: smooth; }
+    html { 
+      scroll-behavior: smooth; 
+      overscroll-behavior: none; /* 👈 Prevents the bounce effect entirely */
+      background: var(--cloud);  /* 👈 Matches the background so no blank screen shows */
+    }
 
     body {
       font-family: 'DM Sans', sans-serif;
@@ -54,6 +58,9 @@ const GlobalStyles = () => (
       color: var(--ink);
       min-height: 100vh;
       line-height: 1.6;
+      overscroll-behavior: none; /* 👈 Apply here as well for cross-browser support */
+      margin: 0;
+      overflow-x: hidden; /* 👈 Prevents accidental side-to-side scrolling */
     }
 
     h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; line-height: 1.2; }
