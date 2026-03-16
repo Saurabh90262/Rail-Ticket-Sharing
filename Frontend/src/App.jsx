@@ -46,21 +46,21 @@ const GlobalStyles = () => (
       --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
 
-    html { 
+   html { 
       scroll-behavior: smooth; 
-      overscroll-behavior: none; /* 👈 Prevents the bounce effect entirely */
-      background: var(--cloud);  /* 👈 Matches the background so no blank screen shows */
+      /* 1. Paint the hidden browser canvas dark to match your Hero and Footer */
+      background-color: var(--ink); 
     }
 
     body {
       font-family: 'DM Sans', sans-serif;
-      background: var(--cloud);
+      /* 2. Keep the actual app background light */
+      background-color: var(--cloud);
       color: var(--ink);
       min-height: 100vh;
       line-height: 1.6;
-      overscroll-behavior: none; /* 👈 Apply here as well for cross-browser support */
       margin: 0;
-      overflow-x: hidden; /* 👈 Prevents accidental side-to-side scrolling */
+      overflow-x: hidden; 
     }
 
     h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; line-height: 1.2; }
