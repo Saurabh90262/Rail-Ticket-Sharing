@@ -1091,6 +1091,7 @@ const set = k => e => {
 
 // ─── Ticket Card ──────────────────────────────────────────────
 function TicketCard({ ticket, isLoggedIn, setPage }) {
+
   const [showContact, setShowContact] = useState(false);
 
   const statusChip = s => {
@@ -1099,114 +1100,223 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
     return 'chip-status-waiting';
   };
 
+  /* ───────── Dynamic Travel Badge ───────── */
+
+  const getTravelBadge = () => {
+
+    const today = new Date();
+    const tomorrow = new Date();
+
+    tomorrow.setDate(today.getDate() + 1);
+
+    const ticketDate = new Date(ticket.dateOfJourney);
+
+    const t = today.toISOString().split('T')[0];
+    const tm = tomorrow.toISOString().split('T')[0];
+    const d = ticketDate.toISOString().split('T')[0];
+
+    if (d === t)
+      return "🔥 Travelling Today";
+
+    if (d === tm)
+      return "⚡ Travelling Tomorrow";
+
+    return null;
+  };
+
+  const travelBadge = getTravelBadge();
+
   return (
     <div className="ticket-card">
+
       <div className="ticket-card-header">
 
-  {/* Date ABOVE route */}
-  <div className="ticket-date-badge">
-    📅 {new Date(ticket.dateOfJourney).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short'
-    })}
-  </div>
+        {/* Date */}
+        <div className="ticket-date-badge">
+
+          📅 {new Date(ticket.dateOfJourney).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short'
+          })}
+
+          {travelBadge && (
+            <span style={{
+              marginLeft: 8,
+              padding: "3px 8px",
+              borderRadius: 6,
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              background: "rgba(255,255,255,0.15)",
+              color: "#ffd166"
+            }}>
+              {travelBadge}
+            </span>
+          )}
+
+        </div>
+
+        {/* Route */}
         <div className="ticket-route">
+
           <div>
             <div className="ticket-station-label">From</div>
             <div className="ticket-station">{ticket.boardingStation}</div>
           </div>
+
           <div className="route-arrow">
             <div className="route-line" />
           </div>
+
           <div style={{ textAlign: 'right' }}>
             <div className="ticket-station-label">To</div>
             <div className="ticket-station">{ticket.destinationStation}</div>
           </div>
+
         </div>
+
         <div className="ticket-train-info">
           <span>🚂 {ticket.trainName}</span>
           <span>#{ticket.trainNumber}</span>
           {isLoggedIn && <span>⏰ {ticket.departureTime}</span>}
         </div>
+
       </div>
 
       <div className="ticket-card-body">
+
         {isLoggedIn ? (
           <>
             <div className="ticket-meta">
-              <span className={`meta-chip chip-class`}>🎫 {ticket.classType}</span>
-              <span className={`meta-chip ${statusChip(ticket.ticketStatus)}`}>
-                {ticket.ticketStatus === 'Confirmed' ? '✅' : ticket.ticketStatus === 'RAC' ? '⚠️' : '⏳'} {ticket.ticketStatus}
+
+              <span className="meta-chip chip-class">
+                🎫 {ticket.classType}
               </span>
-              <span className="meta-chip chip-passenger">👥 {ticket.numberOfPassengers} Pas</span>
+
+              <span className={`meta-chip ${statusChip(ticket.ticketStatus)}`}>
+                {ticket.ticketStatus === 'Confirmed'
+                  ? '✅'
+                  : ticket.ticketStatus === 'RAC'
+                  ? '⚠️'
+                  : '⏳'} {ticket.ticketStatus}
+              </span>
+
+              <span className="meta-chip chip-passenger">
+                👥 {ticket.numberOfPassengers} Pas
+              </span>
+
             </div>
+
             {ticket.ticketStatus !== 'Confirmed' && ticket.racOrWaitingNumber && (
               <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 12 }}>
                 Number: <strong>{ticket.racOrWaitingNumber}</strong>
               </div>
             )}
+
             {ticket.passengers?.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Passengers</div>
+
+                <div style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: 'var(--mist)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: 6
+                }}>
+                  Passengers
+                </div>
+
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {ticket.passengers.map((p, i) => (
-                    <span key={i} className="meta-chip" style={{ background: 'var(--cloud)', color: 'var(--ink-soft)' }}>
+                    <span key={i} className="meta-chip"
+                      style={{ background: 'var(--cloud)', color: 'var(--ink-soft)' }}>
                       {p.gender === 'Male' ? '👨' : p.gender === 'Female' ? '👩' : '🧑'} {p.age}y
                     </span>
                   ))}
                 </div>
+
               </div>
             )}
           </>
         ) : (
           <div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 10 }}>Login to view full details</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 10 }}>
+              Login to view full details
+            </div>
+
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {['Class', 'Status', 'Price', 'Passengers'].map(f => (
                 <div key={f} className="blur-field">🔒 {f}</div>
               ))}
             </div>
+
           </div>
         )}
+
       </div>
 
       <div className="ticket-card-footer">
+
         {isLoggedIn ? (
           <div>
             <div className="ticket-price-label">Total Price</div>
-            <div className="ticket-price">₹{ticket.price?.toLocaleString('en-IN')}</div>
+            <div className="ticket-price">
+              ₹{ticket.price?.toLocaleString('en-IN')}
+            </div>
           </div>
         ) : <div />}
 
         {isLoggedIn ? (
-          <button className="btn btn-primary btn-sm" onClick={() => setShowContact(v => !v)}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setShowContact(v => !v)}
+          >
             {showContact ? '🙈 Hide Contact' : '🛒 Buy This Ticket'}
           </button>
         ) : (
-          <button className="btn btn-outline btn-sm" onClick={() => setPage('login')}>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => setPage('login')}
+          >
             🔍 View More Details
           </button>
         )}
+
       </div>
 
       {showContact && isLoggedIn && ticket.userId && (
         <div style={{ padding: '0 22px 20px' }}>
+
           <div className="contact-reveal">
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1b5e20', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+
+            <div style={{
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              color: '#1b5e20',
+              marginBottom: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               📞 Contact Seller
             </div>
+
             <div className="contact-item">
               📧 {ticket.userId.email}
             </div>
+
             <div className="contact-item">
               📱 {ticket.userId.mobile}
             </div>
+
             <div className="contact-item">
               👤 {ticket.userId.firstName} {ticket.userId.lastName}
             </div>
+
           </div>
+
         </div>
       )}
+
     </div>
   );
 }
