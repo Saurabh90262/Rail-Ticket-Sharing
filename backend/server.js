@@ -584,6 +584,32 @@ app.get('/api/tickets/user/:id', authMiddleware, async (req, res) => {
 
 });
 
+/* ─────────────────────────────────────────
+   UPDATE TICKET
+───────────────────────────────────────── */
+app.put('/api/tickets/:id', authMiddleware, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket)
+      return res.status(404).json({ message: 'Ticket not found' });
+
+    // Verify the user owns this ticket
+    if (ticket.userId.toString() !== req.user.id)
+      return res.status(403).json({ message: 'Not authorized' });
+
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body },
+      { new: true, runValidators: true }
+    );
+
+    res.json(updatedTicket);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 /* ─────────────────────────────────────────
    DELETE TICKET

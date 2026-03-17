@@ -908,66 +908,64 @@ function AuthPage({ setPage, toast, mode }) {
 }
 
 // ─── Publish Ticket Page ──────────────────────────────────────
-function PublishPage({ setPage, toast }) {
+// ─── Publish Ticket Page ──────────────────────────────────────
+function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({
+  
+  // Pre-fill form if we are editing an existing ticket
+  const [form, setForm] = useState(editingTicket ? {
+    boardingStation: editingTicket.boardingStation, 
+    destinationStation: editingTicket.destinationStation, 
+    dateOfJourney: editingTicket.dateOfJourney,
+    trainName: editingTicket.trainName, 
+    trainNumber: editingTicket.trainNumber, 
+    departureTime: editingTicket.departureTime,
+    classType: editingTicket.classType, 
+    ticketStatus: editingTicket.ticketStatus,
+    racOrWaitingNumber: editingTicket.racOrWaitingNumber || '', 
+    numberOfPassengers: editingTicket.numberOfPassengers, 
+    price: editingTicket.price,
+  } : {
     boardingStation: '', destinationStation: '', dateOfJourney: '',
     trainName: '', trainNumber: '', departureTime: '',
     classType: 'Sleeper', ticketStatus: 'Confirmed',
     racOrWaitingNumber: '', numberOfPassengers: 1, price: '',
   });
-  const [passengers, setPassengers] = useState([{ gender: 'Male', age: '' }]);
+
+  const [passengers, setPassengers] = useState(
+    editingTicket ? editingTicket.passengers : [{ gender: 'Male', age: '' }]
+  );
+
   // Station autosuggest
-const [boardingSuggestions, setBoardingSuggestions] = useState([]);
-const [destinationSuggestions, setDestinationSuggestions] = useState([]);
-const debounceTimer = useRef(null);
+  const [boardingSuggestions, setBoardingSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const debounceTimer = useRef(null);
 
   const fetchStations = (value, type) => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(async () => {
+      if (!value) {
+        type === "boarding" ? setBoardingSuggestions([]) : setDestinationSuggestions([]);
+        return;
+      }
+      try {
+        const { data } = await API.get("/stations", { params: { query: value.trim().toLowerCase() } });
+        if (type === "boarding") setBoardingSuggestions(data);
+        else setDestinationSuggestions(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 300);
+  };
 
-if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
-debounceTimer.current = setTimeout(async () => {
-
-  if (!value) {
-    type === "boarding"
-      ? setBoardingSuggestions([])
-      : setDestinationSuggestions([]);
-    return;
-  }
-
-  try {
-
-    const { data } = await API.get("/stations", {
-      params: { query: value.trim().toLowerCase() }
-    });
-
-    if (type === "boarding")
-      setBoardingSuggestions(data);
-    else
-      setDestinationSuggestions(data);
-
-  } catch (err) {
-    console.error(err);
-  }
-
-}, 300);
-};
-
-const set = k => e => {
-
-  const value = e.target.value;
-
-  setForm(f => ({ ...f, [k]: value }));
-
-  if (k === "boardingStation")
-    fetchStations(value, "boarding");
-
-  if (k === "destinationStation")
-    fetchStations(value, "destination");
-
-};
+  const set = k => e => {
+    const value = e.target.value;
+    setForm(f => ({ ...f, [k]: value }));
+    if (k === "boardingStation") fetchStations(value, "boarding");
+    if (k === "destinationStation") fetchStations(value, "destination");
+  };
 
   const updatePassCount = e => {
     const n = parseInt(e.target.value);
@@ -980,61 +978,62 @@ const set = k => e => {
   };
 
   const publish = async () => {
+    if (
+      !form.boardingStation || !form.destinationStation || !form.dateOfJourney ||
+      !form.trainName || !form.trainNumber || !form.departureTime || !form.price
+    ) {
+      setError("Please fill all required fields ⚠️");
+      return;
+    }
 
-  if (
-    !form.boardingStation ||
-    !form.destinationStation ||
-    !form.dateOfJourney ||
-    !form.trainName ||
-    !form.trainNumber ||
-    !form.departureTime ||
-    !form.price
-  ) {
-    setError("Please fill all required fields ⚠️");
-    return;
-  }
+    if (form.boardingStation === form.destinationStation) {
+      setError("Boarding and destination cannot be the same 🚫");
+      return;
+    }
 
-  if (form.boardingStation === form.destinationStation) {
-    setError("Boarding and destination cannot be the same 🚫");
-    return;
-  }
+    setError('');
+    setLoading(true);
 
-  setError('');
-  setLoading(true);
+    try {
+      if (editingTicket) {
+        // Edit mode (PUT)
+        await API.put(`/tickets/${editingTicket._id}`, {
+          ...form,
+          passengers,
+          numberOfPassengers: Number(form.numberOfPassengers),
+          price: Number(form.price)
+        });
+        toast('Ticket updated successfully! ✏️');
+        if (setEditingTicket) setEditingTicket(null);
+      } else {
+        // Create mode (POST)
+        await API.post('/tickets', {
+          ...form,
+          passengers,
+          numberOfPassengers: Number(form.numberOfPassengers),
+          price: Number(form.price)
+        });
+        toast('Ticket published successfully! 🎉');
+      }
+      setPage('profile');
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to process ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  try {
-
-    await API.post('/tickets', {
-      ...form,
-      passengers,
-      numberOfPassengers: Number(form.numberOfPassengers),
-      price: Number(form.price)
-    });
-
-    toast('Ticket published successfully! 🎉');
-    setPage('home');
-
-  } catch (e) {
-
-    setError(e.response?.data?.message || 'Failed to publish ticket');
-
-  } finally {
-
-    setLoading(false);
-
-  }
-};
-
- if (!user) { setPage('login'); return null; }
+  if (!user) { setPage('login'); return null; }
 
   return (
     <div className="publish-page">
       <div className="publish-form-wrap">
         <div className="section-header">
-          <div className="breadcrumb">Home <span>›</span> Publish Ticket</div>
-          <h1 className="form-title">Publish Your Ticket</h1>
-          <p className="form-sub">Share your extra Train ticket with people who need it.</p>
+          <div className="breadcrumb">Home <span>›</span> {editingTicket ? 'Edit Ticket' : 'Publish Ticket'}</div>
+          <h1 className="form-title">{editingTicket ? 'Edit Your Ticket' : 'Publish Your Ticket'}</h1>
+          <p className="form-sub">{editingTicket ? 'Update your ticket details below.' : 'Share your extra Train ticket with people who need it.'}</p>
         </div>
+        
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 
         {/* Journey Details */}
@@ -1046,86 +1045,58 @@ const set = k => e => {
             <div className="form-group">
               <label>Boarding Station *</label>
               <div style={{ position: "relative" }}>
-
-<input
-  value={form.boardingStation}
-  onChange={set('boardingStation')}
-  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
-  placeholder="e.g. New Delhi"
-/>
-
-{boardingSuggestions.length > 0 && (
-  <div className="station-dropdown">
-
-    {boardingSuggestions.map(st => (
-      <div
-        key={st._id}
-        style={{
-          padding: "10px 12px",
-          cursor: "pointer",
-          borderBottom: "1px solid #eee"
-        }}
-        onMouseDown={() => {
-  setForm(f => ({
-    ...f,
-    boardingStation: `${st.code} - ${st.name}`
-  }));
-  setBoardingSuggestions([]);
-}}
-      >
-        <strong>{st.code}</strong>
-        <span style={{ marginLeft: 6, color: "#555" }}>
-          {st.name}
-        </span>
-      </div>
-    ))}
-
-  </div>
-)}
-
-</div>  
+                <input
+                  value={form.boardingStation}
+                  onChange={set('boardingStation')}
+                  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
+                  placeholder="e.g. New Delhi"
+                />
+                {boardingSuggestions.length > 0 && (
+                  <div className="station-dropdown">
+                    {boardingSuggestions.map(st => (
+                      <div
+                        key={st._id}
+                        style={{ padding: "10px 12px", cursor: "pointer", borderBottom: "1px solid #eee" }}
+                        onMouseDown={() => {
+                          setForm(f => ({ ...f, boardingStation: `${st.code} - ${st.name}` }));
+                          setBoardingSuggestions([]);
+                        }}
+                      >
+                        <strong>{st.code}</strong>
+                        <span style={{ marginLeft: 6, color: "#555" }}>{st.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>  
             </div>
             <div className="form-group">
               <label>Destination Station *</label>
               <div style={{ position: "relative" }}>
-
-<input
-  value={form.destinationStation}
-  onChange={set('destinationStation')}
-  onBlur={() => setTimeout(() => setDestinationSuggestions([]), 150)}
-  placeholder="e.g. Mumbai CST"
-/>
-
-{destinationSuggestions.length > 0 && (
-  <div className="station-dropdown">
-
-    {destinationSuggestions.map(st => (
-      <div
-        key={st._id}
-        style={{
-          padding: "10px 12px",
-          cursor: "pointer",
-          borderBottom: "1px solid #eee"
-        }}
-        onMouseDown={() => {
-  setForm(f => ({
-    ...f,
-    destinationStation: `${st.code} - ${st.name}`
-  }));
-  setDestinationSuggestions([]);
-}}
-      >
-        <strong>{st.code}</strong>
-        <span style={{ marginLeft: 6, color: "#555" }}>
-          {st.name}
-        </span>
-      </div>
-    ))}
-
-  </div>
-)}
-
-</div>
+                <input
+                  value={form.destinationStation}
+                  onChange={set('destinationStation')}
+                  onBlur={() => setTimeout(() => setDestinationSuggestions([]), 150)}
+                  placeholder="e.g. Mumbai CST"
+                />
+                {destinationSuggestions.length > 0 && (
+                  <div className="station-dropdown">
+                    {destinationSuggestions.map(st => (
+                      <div
+                        key={st._id}
+                        style={{ padding: "10px 12px", cursor: "pointer", borderBottom: "1px solid #eee" }}
+                        onMouseDown={() => {
+                          setForm(f => ({ ...f, destinationStation: `${st.code} - ${st.name}` }));
+                          setDestinationSuggestions([]);
+                        }}
+                      >
+                        <strong>{st.code}</strong>
+                        <span style={{ marginLeft: 6, color: "#555" }}>{st.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="form-row">
@@ -1233,9 +1204,8 @@ const set = k => e => {
             </div>
           ))}
         </div>
-
         <button className="btn btn-primary btn-full" onClick={publish} disabled={loading} style={{ padding: '14px', fontSize: '1rem' }}>
-          {loading ? '⏳ Publishing...' : '🚀 Publish Ticket'}
+          {loading ? '⏳ Saving...' : (editingTicket ? '💾 Save Changes' : '🚀 Publish Ticket')}
         </button>
       </div>
     </div>
@@ -1769,36 +1739,25 @@ const handleSearch = () => {
 }
 
 // ─── Profile Page ─────────────────────────────────────────────
-function ProfilePage({ setPage, toast }) {
+function ProfilePage({ setPage, toast, setEditingTicket }) {
   const { user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
-  if (!user) return;
-
-  const loadTickets = async () => {
-    try {
-
-      const { data } = await API.get(`/tickets/user/${user.id}`);
-
-      setTickets(data);
-
-    } catch (err) {
-
-      console.error(err);
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
-
-  loadTickets();
-
-}, [user]);
+    if (!user) return;
+    const loadTickets = async () => {
+      try {
+        const { data } = await API.get(`/tickets/user/${user.id}`);
+        setTickets(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTickets();
+  }, [user]);
 
   if (!user) { setPage('login'); return null; }
 
@@ -1814,9 +1773,9 @@ function ProfilePage({ setPage, toast }) {
       <div className="profile-card">
         <div className="profile-header">
           <div className="profile-avatar-lg">
-  {user?.firstName?.[0] || ''}
-  {user?.lastName?.[0] || ''}
-</div>
+            {user?.firstName?.[0] || ''}
+            {user?.lastName?.[0] || ''}
+          </div>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>{user?.firstName || ''} {user?.lastName || ''}</h2>
             <div style={{ opacity: 0.6, fontSize: '0.9rem', marginTop: 4 }}>Train Ticket Sharer</div>
@@ -1866,10 +1825,22 @@ function ProfilePage({ setPage, toast }) {
                         <span style={{ fontSize: '0.8rem', color: 'var(--mist)', marginLeft: 8 }}>{t.numberOfPassengers} passenger{t.numberOfPassengers > 1 ? 's' : ''}</span>
                       </div>
                     </div>
-                    <button className="btn btn-sm" style={{ color: '#c62828', border: '1px solid #ef9a9a', background: '#fce4ec', borderRadius: 8 }}
-                      onClick={() => deleteTicket(t._id)}>
-                      🗑️ Delete
-                    </button>
+                    
+                    {/* The new button group with Edit added */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <button className="btn btn-sm" style={{ color: '#c62828', border: '1px solid #ef9a9a', background: '#fce4ec', borderRadius: 8 }}
+                        onClick={() => deleteTicket(t._id)}>
+                        🗑️ Delete
+                      </button>
+                      <button className="btn btn-sm" style={{ color: '#1565c0', border: '1px solid #90caf9', background: '#e3f2fd', borderRadius: 8 }}
+                        onClick={() => {
+                          setEditingTicket(t);
+                          setPage('edit-ticket');
+                        }}>
+                        ✏️ Edit
+                      </button>
+                    </div>
+
                   </div>
                 </div>
               ))}
@@ -2069,23 +2040,33 @@ function AuthProvider({ children }) {
   );
 }
 
+
 // ─── Main App ─────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState('home');
   const [toastMsg, setToastMsg] = useState('');
+  // ADD THIS STATE:
+  const [editingTicket, setEditingTicket] = useState(null); 
 
   const toast = (msg) => setToastMsg(msg);
 
   return (
     <AuthProvider>
       <GlobalStyles />
-      <Navbar page={page} setPage={setPage} />
+      {/* Reset edit state when navigating from Navbar */}
+      <Navbar page={page} setPage={(p) => { setPage(p); if(p !== 'edit-ticket') setEditingTicket(null); }} />
       <main>
         {page === 'home' && <HomePage setPage={setPage} toast={toast} />}
         {page === 'login' && <AuthPage mode="login" setPage={setPage} toast={toast} />}
         {page === 'register' && <AuthPage mode="register" setPage={setPage} toast={toast} />}
-        {page === 'publish' && <PublishPage setPage={setPage} toast={toast} />}
-        {page === 'profile' && <ProfilePage setPage={setPage} toast={toast} />}
+        
+        {/* Update PublishPage to accept editing props */}
+        {page === 'publish' && <PublishPage key="publish" setPage={setPage} toast={toast} />}
+        {page === 'edit-ticket' && <PublishPage key="edit" setPage={setPage} toast={toast} editingTicket={editingTicket} setEditingTicket={setEditingTicket} />}
+        
+        {/* Pass setEditingTicket to ProfilePage */}
+        {page === 'profile' && <ProfilePage setPage={setPage} toast={toast} setEditingTicket={setEditingTicket} />}
+        
         {page === 'edit-profile' && <EditProfilePage setPage={setPage} toast={toast} />}
       </main>
       <Footer setPage={setPage} />
