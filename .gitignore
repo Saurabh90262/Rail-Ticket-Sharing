@@ -9,8 +9,11 @@ Frontend/node_modules/
 # Environment Variables
 # -----------------------------
 .env
+.env.*
 backend/.env
+backend/.env.*
 Frontend/.env
+Frontend/.env.*
 
 # -----------------------------
 # Logs
@@ -27,12 +30,14 @@ yarn-error.log*
 dist/
 build/
 Frontend/dist/
+Frontend/dist-ssr/
 
 # -----------------------------
-# Vite cache
+# Vite / Linting cache
 # -----------------------------
 .vite/
 .cache/
+.eslintcache
 
 # -----------------------------
 # OS generated files
