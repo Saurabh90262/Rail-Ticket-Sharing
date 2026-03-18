@@ -3,13 +3,22 @@
 //  Single App.jsx file with all routing, state, and UI
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react';
-import axios from 'axios';
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useCallback,
+  useRef,
+} from "react";
+import axios from "axios";
 
 // ─── API Config ───────────────────────────────────────────────
-const API = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api' });
-API.interceptors.request.use(config => {
-  const token = localStorage.getItem('rts_token');
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+});
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("rts_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -648,7 +657,10 @@ const GlobalStyles = () => (
 
 // ─── Toast ────────────────────────────────────────────────────
 function Toast({ message, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => {
+    const t = setTimeout(onClose, 3500);
+    return () => clearTimeout(t);
+  }, [onClose]);
   return <div className="toast">🔔 {message}</div>;
 }
 
@@ -659,42 +671,75 @@ function Navbar({ page, setPage }) {
 
   useEffect(() => {
     const close = () => setOpen(false);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
   }, []);
 
   return (
     <nav className="navbar">
-      <div className="logo" onClick={() => setPage('home')}>
-  <img 
-    src="/train-animated.gif" 
-    alt="Train Logo" 
-    className="logo-icon" 
-    style={{ background: 'transparent', boxShadow: 'none', width: '42px', height: '42px' }} 
-  />
-  Train<span>Expert</span>
-</div>
+      <div className="logo" onClick={() => setPage("home")}>
+        <img
+          src="/train-animated.gif"
+          alt="Train Logo"
+          className="logo-icon"
+          style={{
+            background: "transparent",
+            boxShadow: "none",
+            width: "42px",
+            height: "42px",
+          }}
+        />
+        Train<span>Expert</span>
+      </div>
       <div className="nav-right">
         {user ? (
-          <div className="profile-menu" onClick={e => e.stopPropagation()}>
-            <div className="profile-trigger" onClick={() => setOpen(o => !o)}>
-              <div className="profile-avatar">{user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}</div>
+          <div className="profile-menu" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-trigger" onClick={() => setOpen((o) => !o)}>
+              <div className="profile-avatar">
+                {user?.firstName?.[0] || ""}
+                {user?.lastName?.[0] || ""}
+              </div>
               {user.firstName} {user.lastName}
-              <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>▼</span>
+              <span style={{ fontSize: "0.7rem", opacity: 0.5 }}>▼</span>
             </div>
             {open && (
               <div className="dropdown">
-                <button className="dropdown-item" onClick={() => { setPage('profile'); setOpen(false); }}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setPage("profile");
+                    setOpen(false);
+                  }}
+                >
                   👤 View Profile
                 </button>
-                <button className="dropdown-item" onClick={() => { setPage('edit-profile'); setOpen(false); }}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setPage("edit-profile");
+                    setOpen(false);
+                  }}
+                >
                   ✏️ Edit Profile
                 </button>
-                <button className="dropdown-item" onClick={() => { setPage('publish'); setOpen(false); }}>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setPage("publish");
+                    setOpen(false);
+                  }}
+                >
                   🎫 Publish Ticket
                 </button>
                 <div className="dropdown-divider" />
-                <button className="dropdown-item danger" onClick={() => { logout(); setOpen(false); setPage('home'); }}>
+                <button
+                  className="dropdown-item danger"
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                    setPage("home");
+                  }}
+                >
                   🚪 Logout
                 </button>
               </div>
@@ -702,8 +747,18 @@ function Navbar({ page, setPage }) {
           </div>
         ) : (
           <>
-            <button className="btn btn-outline btn-sm" onClick={() => setPage('login')}>Login</button>
-            <button className="btn btn-primary btn-sm" onClick={() => setPage('register')}>Register</button>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => setPage("login")}
+            >
+              Login
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setPage("register")}
+            >
+              Register
+            </button>
           </>
         )}
       </div>
@@ -715,19 +770,26 @@ function Navbar({ page, setPage }) {
 // ─── Auth Page (Login + Register + Forgot Password) ───────────
 function AuthPage({ setPage, toast, mode }) {
   const { login } = useAuth();
-  const [isLogin, setIsLogin] = useState(mode !== 'register');
+  const [isLogin, setIsLogin] = useState(mode !== "register");
   const [isForgot, setIsForgot] = useState(false);
-  
+
   // OTP States
   const [otpSent, setOtpSent] = useState(false);
-  const [otpToken, setOtpToken] = useState('');
-  const [timer, setTimer] = useState(0); 
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', mobile: '', password: '', otp: '' });
+  const [otpToken, setOtpToken] = useState("");
+  const [timer, setTimer] = useState(0);
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    password: "",
+    otp: "",
+  });
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
     let interval;
@@ -742,25 +804,32 @@ function AuthPage({ setPage, toast, mode }) {
   // Step 1: Ask backend to email the OTP (WITH VALIDATION)
   const requestOtp = async (isResend = false) => {
     // 🚨 FRONTEND VALIDATION: Check required fields before sending OTP
-    if (!form.email) return setError('Email address is required ⚠️');
-    
-    if (!isLogin && !isForgot) { // If Registering
+    if (!form.email) return setError("Email address is required ⚠️");
+
+    if (!isLogin && !isForgot) {
+      // If Registering
       if (!form.firstName || !form.lastName || !form.mobile) {
-        return setError('Please fill all personal details before requesting OTP ⚠️');
+        return setError(
+          "Please fill all personal details before requesting OTP ⚠️",
+        );
       }
     }
 
-    setError(''); setLoading(true);
+    setError("");
+    setLoading(true);
     try {
-      const type = isForgot ? 'forgot' : 'register';
-      const { data } = await API.post('/auth/request-otp', { email: form.email, type });
-      
-      setOtpToken(data.token); 
+      const type = isForgot ? "forgot" : "register";
+      const { data } = await API.post("/auth/request-otp", {
+        email: form.email,
+        type,
+      });
+
+      setOtpToken(data.token);
       setOtpSent(true);
-      setTimer(60); 
-      toast(isResend ? 'New OTP sent! 📧' : 'OTP sent to your email! 📧');
+      setTimer(60);
+      toast(isResend ? "New OTP sent! 📧" : "OTP sent to your email! 📧");
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to send OTP');
+      setError(e.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
     }
@@ -770,32 +839,49 @@ function AuthPage({ setPage, toast, mode }) {
   const submit = async () => {
     // 🚨 FRONTEND VALIDATION: Check passwords and OTP
     if (isLogin) {
-      if (!form.email || !form.password) return setError('Email and password are required ⚠️');
+      if (!form.email || !form.password)
+        return setError("Email and password are required ⚠️");
     } else {
-      if (!form.password) return setError('Please Enter a password ⚠️');
-      if (form.password.length < 6) return setError('Password must be at least 6 characters ⚠️');
-      if (!form.otp) return setError('Please enter the 6-digit OTP ⚠️');
+      if (!form.password) return setError("Please Enter a password ⚠️");
+      if (form.password.length < 6)
+        return setError("Password must be at least 6 characters ⚠️");
+      if (!form.otp) return setError("Please enter the 6-digit OTP ⚠️");
     }
 
-    setError(''); setLoading(true);
+    setError("");
+    setLoading(true);
     try {
       if (isLogin) {
-        const { data } = await API.post('/auth/login', { email: form.email, password: form.password });
+        const { data } = await API.post("/auth/login", {
+          email: form.email,
+          password: form.password,
+        });
         login(data.token, data.user);
-        toast('Welcome back, ' + data.user.firstName + '! 👋');
-        setPage('home');
+        toast("Welcome back, " + data.user.firstName + "! 👋");
+        setPage("home");
       } else if (isForgot) {
-        await API.post('/auth/reset-password', { email: form.email, password: form.password, otp: form.otp, otpToken });
-        toast('Password reset successful! You can now login. ✅');
-        setIsForgot(false); setIsLogin(true); setOtpSent(false); setTimer(0);
+        await API.post("/auth/reset-password", {
+          email: form.email,
+          password: form.password,
+          otp: form.otp,
+          otpToken,
+        });
+        toast("Password reset successful! You can now login. ✅");
+        setIsForgot(false);
+        setIsLogin(true);
+        setOtpSent(false);
+        setTimer(0);
       } else {
-        const { data } = await API.post('/auth/register-verify', { ...form, otpToken });
+        const { data } = await API.post("/auth/register-verify", {
+          ...form,
+          otpToken,
+        });
         login(data.token, data.user);
-        toast('Account created! Welcome aboard 🚆');
-        setPage('home');
+        toast("Account created! Welcome aboard 🚆");
+        setPage("home");
       }
     } catch (e) {
-      setError(e.response?.data?.message || 'Something went wrong');
+      setError(e.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -805,17 +891,31 @@ function AuthPage({ setPage, toast, mode }) {
     <div className="auth-page">
       <div className="form-wrapper">
         <div className="form-title">
-          {isForgot ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
+          {isForgot
+            ? "Reset Password"
+            : isLogin
+              ? "Welcome Back"
+              : "Create Account"}
         </div>
         <div className="form-sub">
-          {isForgot ? 'We will send an OTP to your email.' : isLogin ? 'Login to view full ticket details.' : 'Join thousands sharing railway tickets.'}
+          {isForgot
+            ? "We will send an OTP to your email."
+            : isLogin
+              ? "Login to view full ticket details."
+              : "Join thousands sharing railway tickets."}
         </div>
-        
+
         {error && <div className="alert alert-error">{error}</div>}
 
         <div className="form-group">
           <label>Email Address</label>
-          <input type="email" value={form.email} onChange={set('email')} placeholder="email@example.com" disabled={otpSent} />
+          <input
+            type="email"
+            value={form.email}
+            onChange={set("email")}
+            placeholder="email@example.com"
+            disabled={otpSent}
+          />
         </div>
 
         {!isLogin && !isForgot && !otpSent && (
@@ -823,46 +923,87 @@ function AuthPage({ setPage, toast, mode }) {
             <div className="form-row">
               <div className="form-group">
                 <label>First Name</label>
-                <input value={form.firstName} onChange={set('firstName')} placeholder="Arjun" />
+                <input
+                  value={form.firstName}
+                  onChange={set("firstName")}
+                  placeholder="Arjun"
+                />
               </div>
               <div className="form-group">
                 <label>Last Name</label>
-                <input value={form.lastName} onChange={set('lastName')} placeholder="Sharma" />
+                <input
+                  value={form.lastName}
+                  onChange={set("lastName")}
+                  placeholder="Sharma"
+                />
               </div>
             </div>
             <div className="form-group">
               <label>Mobile Number</label>
-              <input type="tel" value={form.mobile} onChange={set('mobile')} placeholder="9876543210" />
+              <input
+                type="tel"
+                value={form.mobile}
+                onChange={set("mobile")}
+                placeholder="9876543210"
+              />
             </div>
           </>
         )}
 
         {(isLogin || otpSent) && (
           <div className="form-group">
-            <label>{isForgot ? 'Create New Password' : 'Password'}</label>
-            <input type="password" value={form.password} onChange={set('password')} placeholder="••••••••" />
+            <label>{isForgot ? "Create New Password" : "Password"}</label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={set("password")}
+              placeholder="••••••••"
+            />
           </div>
         )}
 
         {otpSent && (
-          <div className="form-group" style={{ animation: 'slideUp 0.3s ease' }}>
+          <div
+            className="form-group"
+            style={{ animation: "slideUp 0.3s ease" }}
+          >
             <label>Enter 6-Digit OTP</label>
-            <input 
-              value={form.otp} 
-              onChange={set('otp')} 
-              maxLength="6" 
+            <input
+              value={form.otp}
+              onChange={set("otp")}
+              maxLength="6"
               placeholder="123456"
-              style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }} 
+              style={{
+                letterSpacing: "8px",
+                textAlign: "center",
+                fontSize: "1.2rem",
+                fontWeight: "bold",
+              }}
             />
-            
-            <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '0.85rem' }}>
+
+            <div
+              style={{
+                textAlign: "right",
+                marginTop: "8px",
+                fontSize: "0.85rem",
+              }}
+            >
               {timer > 0 ? (
-                <span style={{ color: 'var(--mist)' }}>Resend OTP in {timer}s</span>
+                <span style={{ color: "var(--mist)" }}>
+                  Resend OTP in {timer}s
+                </span>
               ) : (
-                <button 
-                  onClick={() => requestOtp(true)} 
+                <button
+                  onClick={() => requestOtp(true)}
                   disabled={loading}
-                  style={{ background: 'none', border: 'none', color: 'var(--rail)', fontWeight: '600', cursor: 'pointer', padding: 0 }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--rail)",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
                 >
                   Resend OTP
                 </button>
@@ -872,36 +1013,57 @@ function AuthPage({ setPage, toast, mode }) {
         )}
 
         {!otpSent && !isLogin ? (
-          <button className="btn btn-primary btn-full" onClick={() => requestOtp(false)} disabled={loading}>
-            {loading ? '⏳ Sending...' : '✉️ Send Verification OTP'}
+          <button
+            className="btn btn-primary btn-full"
+            onClick={() => requestOtp(false)}
+            disabled={loading}
+          >
+            {loading ? "⏳ Sending..." : "✉️ Send Verification OTP"}
           </button>
         ) : (
-          <button className="btn btn-primary btn-full" onClick={submit} disabled={loading}>
-            {loading ? '⏳ Please wait...' : isLogin ? '🚂 Login' : isForgot ? '🔐 Reset Password' : '✨ Verify & Register'}
+          <button
+            className="btn btn-primary btn-full"
+            onClick={submit}
+            disabled={loading}
+          >
+            {loading
+              ? "⏳ Please wait..."
+              : isLogin
+                ? "🚂 Login"
+                : isForgot
+                  ? "🔐 Reset Password"
+                  : "✨ Verify & Register"}
           </button>
         )}
 
         <div className="auth-toggle">
           {isLogin && (
             <div style={{ marginBottom: 12 }}>
-              <button onClick={() => { setIsForgot(true); setIsLogin(false); setError(''); }}>
+              <button
+                onClick={() => {
+                  setIsForgot(true);
+                  setIsLogin(false);
+                  setError("");
+                }}
+              >
                 Forgot Password?
               </button>
             </div>
           )}
-          
+
           {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => { 
-            setIsLogin(!isLogin); 
-            setIsForgot(false); 
-            setOtpSent(false); 
-            setTimer(0);
-            setError(''); 
-          }}>
-            {isLogin ? 'Register here' : 'Login here'}
+          <button
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setIsForgot(false);
+              setOtpSent(false);
+              setTimer(0);
+              setError("");
+            }}
+          >
+            {isLogin ? "Register here" : "Login here"}
           </button>
         </div>
-        
       </div>
     </div>
   );
@@ -912,30 +1074,41 @@ function AuthPage({ setPage, toast, mode }) {
 function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   // Pre-fill form if we are editing an existing ticket
-  const [form, setForm] = useState(editingTicket ? {
-    boardingStation: editingTicket.boardingStation, 
-    destinationStation: editingTicket.destinationStation, 
-    dateOfJourney: editingTicket.dateOfJourney,
-    trainName: editingTicket.trainName, 
-    trainNumber: editingTicket.trainNumber, 
-    departureTime: editingTicket.departureTime,
-    classType: editingTicket.classType, 
-    ticketStatus: editingTicket.ticketStatus,
-    racOrWaitingNumber: editingTicket.racOrWaitingNumber || '', 
-    numberOfPassengers: editingTicket.numberOfPassengers, 
-    price: editingTicket.price,
-  } : {
-    boardingStation: '', destinationStation: '', dateOfJourney: '',
-    trainName: '', trainNumber: '', departureTime: '',
-    classType: 'Sleeper', ticketStatus: 'Confirmed',
-    racOrWaitingNumber: '', numberOfPassengers: 1, price: '',
-  });
+  const [form, setForm] = useState(
+    editingTicket
+      ? {
+          boardingStation: editingTicket.boardingStation,
+          destinationStation: editingTicket.destinationStation,
+          dateOfJourney: editingTicket.dateOfJourney,
+          trainName: editingTicket.trainName,
+          trainNumber: editingTicket.trainNumber,
+          departureTime: editingTicket.departureTime,
+          classType: editingTicket.classType,
+          ticketStatus: editingTicket.ticketStatus,
+          racOrWaitingNumber: editingTicket.racOrWaitingNumber || "",
+          numberOfPassengers: editingTicket.numberOfPassengers,
+          price: editingTicket.price,
+        }
+      : {
+          boardingStation: "",
+          destinationStation: "",
+          dateOfJourney: "",
+          trainName: "",
+          trainNumber: "",
+          departureTime: "",
+          classType: "Sleeper",
+          ticketStatus: "Confirmed",
+          racOrWaitingNumber: "",
+          numberOfPassengers: 1,
+          price: "",
+        },
+  );
 
   const [passengers, setPassengers] = useState(
-    editingTicket ? editingTicket.passengers : [{ gender: 'Male', age: '' }]
+    editingTicket ? editingTicket.passengers : [{ gender: "Male", age: "" }],
   );
 
   // Station autosuggest
@@ -947,11 +1120,15 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(async () => {
       if (!value) {
-        type === "boarding" ? setBoardingSuggestions([]) : setDestinationSuggestions([]);
+        type === "boarding"
+          ? setBoardingSuggestions([])
+          : setDestinationSuggestions([]);
         return;
       }
       try {
-        const { data } = await API.get("/stations", { params: { query: value.trim().toLowerCase() } });
+        const { data } = await API.get("/stations", {
+          params: { query: value.trim().toLowerCase() },
+        });
         if (type === "boarding") setBoardingSuggestions(data);
         else setDestinationSuggestions(data);
       } catch (err) {
@@ -960,27 +1137,37 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
     }, 300);
   };
 
-  const set = k => e => {
+  const set = (k) => (e) => {
     const value = e.target.value;
-    setForm(f => ({ ...f, [k]: value }));
+    setForm((f) => ({ ...f, [k]: value }));
     if (k === "boardingStation") fetchStations(value, "boarding");
     if (k === "destinationStation") fetchStations(value, "destination");
   };
 
-  const updatePassCount = e => {
+  const updatePassCount = (e) => {
     const n = parseInt(e.target.value);
-    setForm(f => ({ ...f, numberOfPassengers: n }));
-    setPassengers(Array.from({ length: n }, (_, i) => passengers[i] || { gender: 'Male', age: '' }));
+    setForm((f) => ({ ...f, numberOfPassengers: n }));
+    setPassengers(
+      Array.from(
+        { length: n },
+        (_, i) => passengers[i] || { gender: "Male", age: "" },
+      ),
+    );
   };
 
   const updatePassenger = (i, k, v) => {
-    setPassengers(p => p.map((x, idx) => idx === i ? { ...x, [k]: v } : x));
+    setPassengers((p) => p.map((x, idx) => (idx === i ? { ...x, [k]: v } : x)));
   };
 
   const publish = async () => {
     if (
-      !form.boardingStation || !form.destinationStation || !form.dateOfJourney ||
-      !form.trainName || !form.trainNumber || !form.departureTime || !form.price
+      !form.boardingStation ||
+      !form.destinationStation ||
+      !form.dateOfJourney ||
+      !form.trainName ||
+      !form.trainNumber ||
+      !form.departureTime ||
+      !form.price
     ) {
       setError("Please fill all required fields ⚠️");
       return;
@@ -991,7 +1178,7 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
       return;
     }
 
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
@@ -1001,44 +1188,65 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
           ...form,
           passengers,
           numberOfPassengers: Number(form.numberOfPassengers),
-          price: Number(form.price)
+          price: Number(form.price),
         });
-        toast('Ticket updated successfully! ✏️');
+        toast("Ticket updated successfully! ✏️");
         if (setEditingTicket) setEditingTicket(null);
       } else {
         // Create mode (POST)
-        await API.post('/tickets', {
+        await API.post("/tickets", {
           ...form,
           passengers,
           numberOfPassengers: Number(form.numberOfPassengers),
-          price: Number(form.price)
+          price: Number(form.price),
         });
-        toast('Ticket published successfully! 🎉');
+        toast("Ticket published successfully! 🎉");
       }
-      setPage('profile');
+      setPage("profile");
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to process ticket');
+      setError(e.response?.data?.message || "Failed to process ticket");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) { setPage('login'); return null; }
+  if (!user) {
+    setPage("login");
+    return null;
+  }
 
   return (
     <div className="publish-page">
       <div className="publish-form-wrap">
         <div className="section-header">
-          <div className="breadcrumb">Home <span>›</span> {editingTicket ? 'Edit Ticket' : 'Publish Ticket'}</div>
-          <h1 className="form-title">{editingTicket ? 'Edit Your Ticket' : 'Publish Your Ticket'}</h1>
-          <p className="form-sub">{editingTicket ? 'Update your ticket details below.' : 'Share your extra Train ticket with people who need it.'}</p>
+          <div className="breadcrumb">
+            Home <span>›</span>{" "}
+            {editingTicket ? "Edit Ticket" : "Publish Ticket"}
+          </div>
+          <h1 className="form-title">
+            {editingTicket ? "Edit Your Ticket" : "Publish Your Ticket"}
+          </h1>
+          <p className="form-sub">
+            {editingTicket
+              ? "Update your ticket details below."
+              : "Share your extra Train ticket with people who need it."}
+          </p>
         </div>
-        
+
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 
         {/* Journey Details */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--rail)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--rail)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 14,
+            }}
+          >
             🚉 Journey Details
           </div>
           <div className="form-row">
@@ -1047,51 +1255,73 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
               <div style={{ position: "relative" }}>
                 <input
                   value={form.boardingStation}
-                  onChange={set('boardingStation')}
-                  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
+                  onChange={set("boardingStation")}
+                  onBlur={() =>
+                    setTimeout(() => setBoardingSuggestions([]), 150)
+                  }
                   placeholder="e.g. New Delhi"
                 />
                 {boardingSuggestions.length > 0 && (
                   <div className="station-dropdown">
-                    {boardingSuggestions.map(st => (
+                    {boardingSuggestions.map((st) => (
                       <div
                         key={st._id}
-                        style={{ padding: "10px 12px", cursor: "pointer", borderBottom: "1px solid #eee" }}
+                        style={{
+                          padding: "10px 12px",
+                          cursor: "pointer",
+                          borderBottom: "1px solid #eee",
+                        }}
                         onMouseDown={() => {
-                          setForm(f => ({ ...f, boardingStation: `${st.code} - ${st.name}` }));
+                          setForm((f) => ({
+                            ...f,
+                            boardingStation: `${st.code} - ${st.name}`,
+                          }));
                           setBoardingSuggestions([]);
                         }}
                       >
                         <strong>{st.code}</strong>
-                        <span style={{ marginLeft: 6, color: "#555" }}>{st.name}</span>
+                        <span style={{ marginLeft: 6, color: "#555" }}>
+                          {st.name}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>  
+              </div>
             </div>
             <div className="form-group">
               <label>Destination Station *</label>
               <div style={{ position: "relative" }}>
                 <input
                   value={form.destinationStation}
-                  onChange={set('destinationStation')}
-                  onBlur={() => setTimeout(() => setDestinationSuggestions([]), 150)}
+                  onChange={set("destinationStation")}
+                  onBlur={() =>
+                    setTimeout(() => setDestinationSuggestions([]), 150)
+                  }
                   placeholder="e.g. Mumbai CST"
                 />
                 {destinationSuggestions.length > 0 && (
                   <div className="station-dropdown">
-                    {destinationSuggestions.map(st => (
+                    {destinationSuggestions.map((st) => (
                       <div
                         key={st._id}
-                        style={{ padding: "10px 12px", cursor: "pointer", borderBottom: "1px solid #eee" }}
+                        style={{
+                          padding: "10px 12px",
+                          cursor: "pointer",
+                          borderBottom: "1px solid #eee",
+                        }}
                         onMouseDown={() => {
-                          setForm(f => ({ ...f, destinationStation: `${st.code} - ${st.name}` }));
+                          setForm((f) => ({
+                            ...f,
+                            destinationStation: `${st.code} - ${st.name}`,
+                          }));
                           setDestinationSuggestions([]);
                         }}
                       >
                         <strong>{st.code}</strong>
-                        <span style={{ marginLeft: 6, color: "#555" }}>{st.name}</span>
+                        <span style={{ marginLeft: 6, color: "#555" }}>
+                          {st.name}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1102,41 +1332,75 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
           <div className="form-row">
             <div className="form-group">
               <label>Date of Journey *</label>
-              <input type="date" value={form.dateOfJourney} onChange={set('dateOfJourney')} />
+              <input
+                type="date"
+                value={form.dateOfJourney}
+                onChange={set("dateOfJourney")}
+              />
             </div>
             <div className="form-group">
               <label>Departure Time *</label>
-              <input type="time" value={form.departureTime} onChange={set('departureTime')} />
+              <input
+                type="time"
+                value={form.departureTime}
+                onChange={set("departureTime")}
+              />
             </div>
           </div>
         </div>
 
         {/* Train Details */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--rail)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--rail)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 14,
+            }}
+          >
             🚂 Train Details
           </div>
           <div className="form-row">
             <div className="form-group">
               <label>Train Name *</label>
-              <input value={form.trainName} onChange={set('trainName')} placeholder="e.g. Rajdhani Express" />
+              <input
+                value={form.trainName}
+                onChange={set("trainName")}
+                placeholder="e.g. Rajdhani Express"
+              />
             </div>
             <div className="form-group">
               <label>Train Number *</label>
-              <input value={form.trainNumber} onChange={set('trainNumber')} placeholder="e.g. 12301" />
+              <input
+                value={form.trainNumber}
+                onChange={set("trainNumber")}
+                placeholder="e.g. 12301"
+              />
             </div>
           </div>
         </div>
 
         {/* Ticket Details */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--rail)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--rail)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 14,
+            }}
+          >
             🎫 Ticket Details
           </div>
           <div className="form-row">
             <div className="form-group">
               <label>Class of Ticket *</label>
-              <select value={form.classType} onChange={set('classType')}>
+              <select value={form.classType} onChange={set("classType")}>
                 <option>Sleeper</option>
                 <option>3rd AC</option>
                 <option>2nd AC</option>
@@ -1145,7 +1409,7 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
             </div>
             <div className="form-group">
               <label>Ticket Status *</label>
-              <select value={form.ticketStatus} onChange={set('ticketStatus')}>
+              <select value={form.ticketStatus} onChange={set("ticketStatus")}>
                 <option>Confirmed</option>
                 <option>RAC</option>
                 <option>Waiting List</option>
@@ -1154,13 +1418,28 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
           </div>
 
           {/* Conditional RAC / Waiting field */}
-          {form.ticketStatus !== 'Confirmed' && (
-            <div className="form-group" style={{ background: 'var(--cloud)', padding: 14, borderRadius: 10, border: '1px dashed rgba(232,51,74,0.3)' }}>
-              <label>{form.ticketStatus === 'RAC' ? 'RAC Number' : 'Waiting List Number'} *</label>
+          {form.ticketStatus !== "Confirmed" && (
+            <div
+              className="form-group"
+              style={{
+                background: "var(--cloud)",
+                padding: 14,
+                borderRadius: 10,
+                border: "1px dashed rgba(232,51,74,0.3)",
+              }}
+            >
+              <label>
+                {form.ticketStatus === "RAC"
+                  ? "RAC Number"
+                  : "Waiting List Number"}{" "}
+                *
+              </label>
               <input
                 value={form.racOrWaitingNumber}
-                onChange={set('racOrWaitingNumber')}
-                placeholder={form.ticketStatus === 'RAC' ? 'e.g. RAC 45' : 'e.g. WL 12'}
+                onChange={set("racOrWaitingNumber")}
+                placeholder={
+                  form.ticketStatus === "RAC" ? "e.g. RAC 45" : "e.g. WL 12"
+                }
               />
             </div>
           )}
@@ -1168,20 +1447,42 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
           <div className="form-row">
             <div className="form-group">
               <label>Number of Passengers *</label>
-              <select value={form.numberOfPassengers} onChange={updatePassCount}>
-                {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Passenger{n > 1 ? 's' : ''}</option>)}
+              <select
+                value={form.numberOfPassengers}
+                onChange={updatePassCount}
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option key={n} value={n}>
+                    {n} Passenger{n > 1 ? "s" : ""}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="form-group">
               <label>Total Price (₹) *</label>
-              <input type="number" value={form.price} onChange={set('price')} placeholder="e.g. 1500" min="0" />
+              <input
+                type="number"
+                value={form.price}
+                onChange={set("price")}
+                placeholder="e.g. 1500"
+                min="0"
+              />
             </div>
           </div>
         </div>
 
         {/* Passenger Details */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--rail)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--rail)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              marginBottom: 14,
+            }}
+          >
             👥 Passenger Details
           </div>
           {passengers.map((p, i) => (
@@ -1190,7 +1491,12 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
               <div className="form-row">
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Gender</label>
-                  <select value={p.gender} onChange={e => updatePassenger(i, 'gender', e.target.value)}>
+                  <select
+                    value={p.gender}
+                    onChange={(e) =>
+                      updatePassenger(i, "gender", e.target.value)
+                    }
+                  >
                     <option>Male</option>
                     <option>Female</option>
                     <option>Other</option>
@@ -1198,14 +1504,30 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Age</label>
-                  <input type="number" value={p.age} onChange={e => updatePassenger(i, 'age', e.target.value)} placeholder="e.g. 28" min="0" max="120" />
+                  <input
+                    type="number"
+                    value={p.age}
+                    onChange={(e) => updatePassenger(i, "age", e.target.value)}
+                    placeholder="e.g. 28"
+                    min="0"
+                    max="120"
+                  />
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <button className="btn btn-primary btn-full" onClick={publish} disabled={loading} style={{ padding: '14px', fontSize: '1rem' }}>
-          {loading ? '⏳ Saving...' : (editingTicket ? '💾 Save Changes' : '🚀 Publish Ticket')}
+        <button
+          className="btn btn-primary btn-full"
+          onClick={publish}
+          disabled={loading}
+          style={{ padding: "14px", fontSize: "1rem" }}
+        >
+          {loading
+            ? "⏳ Saving..."
+            : editingTicket
+              ? "💾 Save Changes"
+              : "🚀 Publish Ticket"}
         </button>
       </div>
     </div>
@@ -1214,19 +1536,17 @@ function PublishPage({ setPage, toast, editingTicket, setEditingTicket }) {
 
 // ─── Ticket Card ──────────────────────────────────────────────
 function TicketCard({ ticket, isLoggedIn, setPage }) {
-
   const [showContact, setShowContact] = useState(false);
 
-  const statusChip = s => {
-    if (s === 'Confirmed') return 'chip-status-confirmed';
-    if (s === 'RAC') return 'chip-status-rac';
-    return 'chip-status-waiting';
+  const statusChip = (s) => {
+    if (s === "Confirmed") return "chip-status-confirmed";
+    if (s === "RAC") return "chip-status-rac";
+    return "chip-status-waiting";
   };
 
   /* ───────── Dynamic Travel Badge ───────── */
 
   const getTravelBadge = () => {
-
     const today = new Date();
     const tomorrow = new Date();
 
@@ -1234,15 +1554,13 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
 
     const ticketDate = new Date(ticket.dateOfJourney);
 
-    const t = today.toISOString().split('T')[0];
-    const tm = tomorrow.toISOString().split('T')[0];
-    const d = ticketDate.toISOString().split('T')[0];
+    const t = today.toISOString().split("T")[0];
+    const tm = tomorrow.toISOString().split("T")[0];
+    const d = ticketDate.toISOString().split("T")[0];
 
-    if (d === t)
-      return "🔥 Travelling Today";
+    if (d === t) return "🔥 Travelling Today";
 
-    if (d === tm)
-      return "⚡ Travelling Tomorrow";
+    if (d === tm) return "⚡ Travelling Tomorrow";
 
     return null;
   };
@@ -1251,36 +1569,33 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
 
   return (
     <div className="ticket-card">
-
       <div className="ticket-card-header">
-
         {/* Date */}
         <div className="ticket-date-badge">
-
-          📅 {new Date(ticket.dateOfJourney).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short'
+          📅{" "}
+          {new Date(ticket.dateOfJourney).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
           })}
-
           {travelBadge && (
-            <span style={{
-              marginLeft: 8,
-              padding: "3px 8px",
-              borderRadius: 6,
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              background: "rgba(255,255,255,0.15)",
-              color: "#ffd166"
-            }}>
+            <span
+              style={{
+                marginLeft: 8,
+                padding: "3px 8px",
+                borderRadius: 6,
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                background: "rgba(255,255,255,0.15)",
+                color: "#ffd166",
+              }}
+            >
               {travelBadge}
             </span>
           )}
-
         </div>
 
         {/* Route */}
         <div className="ticket-route">
-
           <div>
             <div className="ticket-station-label">From</div>
             <div className="ticket-station">{ticket.boardingStation}</div>
@@ -1290,11 +1605,10 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
             <div className="route-line" />
           </div>
 
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: "right" }}>
             <div className="ticket-station-label">To</div>
             <div className="ticket-station">{ticket.destinationStation}</div>
           </div>
-
         </div>
 
         <div className="ticket-train-info">
@@ -1302,144 +1616,158 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
           <span>#{ticket.trainNumber}</span>
           {isLoggedIn && <span>⏰ {ticket.departureTime}</span>}
         </div>
-
       </div>
 
       <div className="ticket-card-body">
-
         {isLoggedIn ? (
           <>
             <div className="ticket-meta">
-
               <span className="meta-chip chip-class">
                 🎫 {ticket.classType}
               </span>
 
               <span className={`meta-chip ${statusChip(ticket.ticketStatus)}`}>
-                {ticket.ticketStatus === 'Confirmed'
-                  ? '✅'
-                  : ticket.ticketStatus === 'RAC'
-                  ? '⚠️'
-                  : '⏳'} {ticket.ticketStatus}
+                {ticket.ticketStatus === "Confirmed"
+                  ? "✅"
+                  : ticket.ticketStatus === "RAC"
+                    ? "⚠️"
+                    : "⏳"}{" "}
+                {ticket.ticketStatus}
               </span>
 
               <span className="meta-chip chip-passenger">
                 👥 {ticket.numberOfPassengers} Pas
               </span>
-
             </div>
 
-            {ticket.ticketStatus !== 'Confirmed' && ticket.racOrWaitingNumber && (
-              <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 12 }}>
-                RAC/WL Status: <strong>{ticket.racOrWaitingNumber}</strong>
-              </div>
-            )}
+            {ticket.ticketStatus !== "Confirmed" &&
+              ticket.racOrWaitingNumber && (
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "var(--mist)",
+                    marginBottom: 12,
+                  }}
+                >
+                  RAC/WL Status: <strong>{ticket.racOrWaitingNumber}</strong>
+                </div>
+              )}
 
             {ticket.passengers?.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: 'var(--mist)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: 6
-                }}>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: "var(--mist)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: 6,
+                  }}
+                >
                   Passengers
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {ticket.passengers.map((p, i) => (
-                    <span key={i} className="meta-chip"
-                      style={{ background: 'var(--cloud)', color: 'var(--ink-soft)' }}>
-                      {p.gender === 'Male' ? '👨' : p.gender === 'Female' ? '👩' : '🧑'} {p.age}y
+                    <span
+                      key={i}
+                      className="meta-chip"
+                      style={{
+                        background: "var(--cloud)",
+                        color: "var(--ink-soft)",
+                      }}
+                    >
+                      {p.gender === "Male"
+                        ? "👨"
+                        : p.gender === "Female"
+                          ? "👩"
+                          : "🧑"}{" "}
+                      {p.age}y
                     </span>
                   ))}
                 </div>
-
               </div>
             )}
           </>
         ) : (
           <div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginBottom: 10 }}>
+            <div
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--mist)",
+                marginBottom: 10,
+              }}
+            >
               Login to view full details
             </div>
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['Class', 'Status', 'Price', 'Passengers'].map(f => (
-                <div key={f} className="blur-field">🔒 {f}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["Class", "Status", "Price", "Passengers"].map((f) => (
+                <div key={f} className="blur-field">
+                  🔒 {f}
+                </div>
               ))}
             </div>
-
           </div>
         )}
-
       </div>
 
       <div className="ticket-card-footer">
-
         {isLoggedIn ? (
           <div>
             <div className="ticket-price-label">Total Price</div>
             <div className="ticket-price">
-              ₹{ticket.price?.toLocaleString('en-IN')}
+              ₹{ticket.price?.toLocaleString("en-IN")}
             </div>
           </div>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
 
         {isLoggedIn ? (
           <button
             className="btn btn-primary btn-sm"
-            onClick={() => setShowContact(v => !v)}
+            onClick={() => setShowContact((v) => !v)}
           >
-            {showContact ? '🙈 Hide Contact' : '🛒 Buy This Ticket'}
+            {showContact ? "🙈 Hide Contact" : "🛒 Buy This Ticket"}
           </button>
         ) : (
           <button
             className="btn btn-outline btn-sm"
-            onClick={() => setPage('login')}
+            onClick={() => setPage("login")}
           >
             🔍 View More Details
           </button>
         )}
-
       </div>
 
       {showContact && isLoggedIn && ticket.userId && (
-        <div style={{ padding: '0 22px 20px' }}>
-
+        <div style={{ padding: "0 22px 20px" }}>
           <div className="contact-reveal">
-
-            <div style={{
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              color: '#1b5e20',
-              marginBottom: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "0.82rem",
+                color: "#1b5e20",
+                marginBottom: 10,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
               📞 Contact Seller
             </div>
 
-            <div className="contact-item">
-              📧 {ticket.userId.email}
-            </div>
+            <div className="contact-item">📧 {ticket.userId.email}</div>
 
-            <div className="contact-item">
-              📱 {ticket.userId.mobile}
-            </div>
+            <div className="contact-item">📱 {ticket.userId.mobile}</div>
 
             <div className="contact-item">
               👤 {ticket.userId.firstName} {ticket.userId.lastName}
             </div>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 }
@@ -1448,9 +1776,13 @@ function TicketCard({ ticket, isLoggedIn, setPage }) {
 function HomePage({ setPage, toast }) {
   const { user } = useAuth();
   const [exactTickets, setExactTickets] = useState([]);
-const [otherTickets, setOtherTickets] = useState([]);
+  const [otherTickets, setOtherTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState({ boarding: '', destination: '', date: '' });
+  const [search, setSearch] = useState({
+    boarding: "",
+    destination: "",
+    date: "",
+  });
 
   // ✅ Autocomplete states
   const [boardingSuggestions, setBoardingSuggestions] = useState([]);
@@ -1459,29 +1791,23 @@ const [otherTickets, setOtherTickets] = useState([]);
 
   // ─── Fetch Tickets ─────────────────────────
   const fetchTickets = useCallback(async (params = {}) => {
+    setLoading(true);
 
-  setLoading(true);
+    try {
+      const { data } = await API.get("/tickets", { params });
 
-  try {
+      setExactTickets(data.exactMatches || []);
+      setOtherTickets(data.otherOptions || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    const { data } = await API.get('/tickets', { params });
-
-    setExactTickets(data.exactMatches || []);
-    setOtherTickets(data.otherOptions || []);
-
-  } catch (e) {
-
-    console.error(e);
-
-  } finally {
-
-    setLoading(false);
-
-  }
-
-}, []);
-
-  useEffect(() => { fetchTickets(); }, [fetchTickets]);
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   // ─── Fetch Station Suggestions ─────────────
   const fetchStationSuggestions = (value, type) => {
@@ -1489,18 +1815,18 @@ const [otherTickets, setOtherTickets] = useState([]);
 
     const timer = setTimeout(async () => {
       if (!value) {
-        type === 'boarding'
+        type === "boarding"
           ? setBoardingSuggestions([])
           : setDestinationSuggestions([]);
         return;
       }
 
       try {
-        const { data } = await API.get('/stations', {
-  params: { query: value.trim().toLowerCase() }
-});
+        const { data } = await API.get("/stations", {
+          params: { query: value.trim().toLowerCase() },
+        });
 
-        type === 'boarding'
+        type === "boarding"
           ? setBoardingSuggestions(data)
           : setDestinationSuggestions(data);
       } catch (err) {
@@ -1511,33 +1837,30 @@ const [otherTickets, setOtherTickets] = useState([]);
     debounceTimer.current = timer;
   };
 
-const handleSearch = () => {
+  const handleSearch = () => {
+    if (
+      search.boarding &&
+      search.destination &&
+      search.boarding === search.destination
+    ) {
+      toast("Boarding and destination cannot be the same 🚫");
+      return;
+    }
 
-  if (
-    search.boarding &&
-    search.destination &&
-    search.boarding === search.destination
-  ) {
-    toast("Boarding and destination cannot be the same 🚫");
-    return;
-  }
+    const params = {};
 
-  const params = {};
+    if (search.boarding) params.boarding = search.boarding.split("-")[0].trim();
 
-  if (search.boarding)
-    params.boarding = search.boarding.split('-')[0].trim();
+    if (search.destination)
+      params.destination = search.destination.split("-")[0].trim();
 
-  if (search.destination)
-    params.destination = search.destination.split('-')[0].trim();
+    if (search.date) params.date = search.date;
 
-  if (search.date)
-    params.date = search.date;
-
-  fetchTickets(params);
-};
+    fetchTickets(params);
+  };
 
   const handleClear = () => {
-    setSearch({ boarding: '', destination: '', date: '' });
+    setSearch({ boarding: "", destination: "", date: "" });
     setBoardingSuggestions([]);
     setDestinationSuggestions([]);
     fetchTickets();
@@ -1549,54 +1872,72 @@ const handleSearch = () => {
         <div className="hero-bg-pattern" />
         <div className="hero-grid" />
         <div className="hero-content">
-
           <div className="hero-badge">
             🇮🇳 India's Train Ticket Sharing Community
           </div>
 
           <h1 className="hero-title">
-            Share Extra Tickets,<br />
+            Share Extra Tickets,
+            <br />
             <em>Help Fellow Travellers</em>
           </h1>
 
           <p className="hero-sub">
-            Have an extra Train ticket? Publish it here. Need a ticket? Search and connect instantly.
+            Have an extra Train ticket? Publish it here. Need a ticket? Search
+            and connect instantly.
           </p>
 
           {/* 🔍 Search Box */}
           <div className="search-box">
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
+            <div
+              style={{
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 16,
+              }}
+            >
               🔍 Find Tickets
             </div>
 
             <div className="search-grid">
-
               {/* Boarding */}
-              <div style={{ position: 'relative' }}>
-                <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem' }}>
+              <div style={{ position: "relative" }}>
+                <label
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: "0.78rem",
+                  }}
+                >
                   Boarding Station
                 </label>
                 <input
-  value={search.boarding}
-  onBlur={() => setTimeout(() => setBoardingSuggestions([]), 150)}
-                  onChange={e => {
-                    setSearch(s => ({ ...s, boarding: e.target.value }));
-                    fetchStationSuggestions(e.target.value, 'boarding');
+                  value={search.boarding}
+                  onBlur={() =>
+                    setTimeout(() => setBoardingSuggestions([]), 150)
+                  }
+                  onChange={(e) => {
+                    setSearch((s) => ({ ...s, boarding: e.target.value }));
+                    fetchStationSuggestions(e.target.value, "boarding");
                   }}
                   placeholder="e.g. NDLS or New Delhi"
-                  style={{ background: 'rgba(255,255,255,0.08)', color: 'white', marginTop: 6 }}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    marginTop: 6,
+                  }}
                 />
 
                 {boardingSuggestions.length > 0 && (
                   <div className="station-dropdown">
-                    {boardingSuggestions.map(st => (
+                    {boardingSuggestions.map((st) => (
                       <div
                         key={st._id}
-                        style={{ padding: 10, cursor: 'pointer' }}
+                        style={{ padding: 10, cursor: "pointer" }}
                         onMouseDown={() => {
-                          setSearch(s => ({
+                          setSearch((s) => ({
                             ...s,
-                            boarding: `${st.code} - ${st.name}`
+                            boarding: `${st.code} - ${st.name}`,
                           }));
                           setBoardingSuggestions([]);
                         }}
@@ -1609,30 +1950,39 @@ const handleSearch = () => {
               </div>
 
               {/* Destination */}
-              <div style={{ position: 'relative' }}>
-                <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem' }}>
+              <div style={{ position: "relative" }}>
+                <label
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: "0.78rem",
+                  }}
+                >
                   Destination
                 </label>
                 <input
                   value={search.destination}
-                  onChange={e => {
-                    setSearch(s => ({ ...s, destination: e.target.value }));
-                    fetchStationSuggestions(e.target.value, 'destination');
+                  onChange={(e) => {
+                    setSearch((s) => ({ ...s, destination: e.target.value }));
+                    fetchStationSuggestions(e.target.value, "destination");
                   }}
                   placeholder="e.g. BCT or Mumbai Central"
-                  style={{ background: 'rgba(255,255,255,0.08)', color: 'white', marginTop: 6 }}
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    marginTop: 6,
+                  }}
                 />
 
                 {destinationSuggestions.length > 0 && (
                   <div className="station-dropdown">
-                    {destinationSuggestions.map(st => (
+                    {destinationSuggestions.map((st) => (
                       <div
                         key={st._id}
-                        style={{ padding: 10, cursor: 'pointer' }}
+                        style={{ padding: 10, cursor: "pointer" }}
                         onMouseDown={() => {
-                          setSearch(s => ({
+                          setSearch((s) => ({
                             ...s,
-                            destination: `${st.code} - ${st.name}`
+                            destination: `${st.code} - ${st.name}`,
                           }));
                           setDestinationSuggestions([]);
                         }}
@@ -1646,94 +1996,113 @@ const handleSearch = () => {
 
               {/* Date */}
               <div>
-                <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem' }}>
+                <label
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: "0.78rem",
+                  }}
+                >
                   Date of Journey
                 </label>
                 <input
                   type="date"
                   value={search.date}
-                  onChange={e => setSearch(s => ({ ...s, date: e.target.value }))}
-                  style={{ background: 'rgba(255,255,255,0.08)', color: 'white', marginTop: 6 }}
+                  onChange={(e) =>
+                    setSearch((s) => ({ ...s, date: e.target.value }))
+                  }
+                  style={{
+                    background: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    marginTop: 6,
+                  }}
                 />
               </div>
 
               {/* Search Button */}
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <button className="btn btn-primary" onClick={handleSearch}>
                   🔍 Search Tickets
                 </button>
               </div>
-
             </div>
 
             {(search.boarding || search.destination || search.date) && (
               <button
                 onClick={handleClear}
-                style={{ marginTop: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                style={{
+                  marginTop: 10,
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.4)",
+                  cursor: "pointer",
+                }}
               >
                 ✕ Clear filters
               </button>
             )}
           </div>
-
         </div>
       </section>
 
       {/* Tickets Section remains same */}
       <section className="section">
+        {loading ? (
+          <div className="loader-wrap">
+            <div className="spinner" />
+          </div>
+        ) : (
+          <>
+            {exactTickets.length > 0 && (
+              <>
+                <h2 className="section-title">🎯 Exact Match</h2>
+                <p className="section-sub">
+                  Tickets available for your selected date
+                </p>
 
-{loading ? (
+                <div className="tickets-grid">
+                  {exactTickets.map((t) => (
+                    <TicketCard
+                      key={t._id}
+                      ticket={t}
+                      isLoggedIn={!!user}
+                      setPage={setPage}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
 
-  <div className="loader-wrap"><div className="spinner" /></div>
+            {otherTickets.length > 0 && (
+              <>
+                <div style={{ marginTop: 60 }} />
 
-) : (
+                <h2 className="section-title">🚆 Other Available Options</h2>
+                <p className="section-sub">
+                  Same route but different travel dates
+                </p>
 
-  <>
+                <div className="tickets-grid">
+                  {otherTickets.map((t) => (
+                    <TicketCard
+                      key={t._id}
+                      ticket={t}
+                      isLoggedIn={!!user}
+                      setPage={setPage}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
 
-  {exactTickets.length > 0 && (
-    <>
-      <h2 className="section-title">🎯 Exact Match</h2>
-      <p className="section-sub">
-        Tickets available for your selected date
-      </p>
-
-      <div className="tickets-grid">
-        {exactTickets.map(t => (
-          <TicketCard key={t._id} ticket={t} isLoggedIn={!!user} setPage={setPage} />
-        ))}
-      </div>
-    </>
-  )}
-
-  {otherTickets.length > 0 && (
-    <>
-      <div style={{ marginTop: 60 }} />
-
-      <h2 className="section-title">🚆 Other Available Options</h2>
-      <p className="section-sub">
-        Same route but different travel dates
-      </p>
-
-      <div className="tickets-grid">
-        {otherTickets.map(t => (
-          <TicketCard key={t._id} ticket={t} isLoggedIn={!!user} setPage={setPage} />
-        ))}
-      </div>
-    </>
-  )}
-
-  {exactTickets.length === 0 && otherTickets.length === 0 && (
-    <div className="empty-state">
-      <div className="empty-icon">🚂</div>
-      <div className="empty-title">No Tickets Found</div>
-    </div>
-  )}
-
-  </>
-
-)}
-
-</section>
+            {exactTickets.length === 0 && otherTickets.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">🚂</div>
+                <div className="empty-title">No Tickets Found</div>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }
@@ -1759,13 +2128,16 @@ function ProfilePage({ setPage, toast, setEditingTicket }) {
     loadTickets();
   }, [user]);
 
-  if (!user) { setPage('login'); return null; }
+  if (!user) {
+    setPage("login");
+    return null;
+  }
 
   const deleteTicket = async (id) => {
-    if (!window.confirm('Delete this ticket?')) return;
+    if (!window.confirm("Delete this ticket?")) return;
     await API.delete(`/tickets/${id}`);
-    setTickets(t => t.filter(x => x._id !== id));
-    toast('Ticket deleted.');
+    setTickets((t) => t.filter((x) => x._id !== id));
+    toast("Ticket deleted.");
   };
 
   return (
@@ -1773,12 +2145,16 @@ function ProfilePage({ setPage, toast, setEditingTicket }) {
       <div className="profile-card">
         <div className="profile-header">
           <div className="profile-avatar-lg">
-            {user?.firstName?.[0] || ''}
-            {user?.lastName?.[0] || ''}
+            {user?.firstName?.[0] || ""}
+            {user?.lastName?.[0] || ""}
           </div>
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>{user?.firstName || ''} {user?.lastName || ''}</h2>
-            <div style={{ opacity: 0.6, fontSize: '0.9rem', marginTop: 4 }}>Train Ticket Sharer</div>
+            <h2 style={{ fontSize: "1.4rem", fontWeight: 700 }}>
+              {user?.firstName || ""} {user?.lastName || ""}
+            </h2>
+            <div style={{ opacity: 0.6, fontSize: "0.9rem", marginTop: 4 }}>
+              Train Ticket Sharer
+            </div>
           </div>
         </div>
         <div className="profile-body">
@@ -1797,56 +2173,142 @@ function ProfilePage({ setPage, toast, setEditingTicket }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>My Published Tickets</h3>
-          <button className="btn btn-primary btn-sm" onClick={() => setPage('publish')}>+ Publish New</button>
+      <div style={{ maxWidth: 700, margin: "0 auto" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <h3 style={{ fontSize: "1.2rem", fontWeight: 700 }}>
+            My Published Tickets
+          </h3>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setPage("publish")}
+          >
+            + Publish New
+          </button>
         </div>
-        {loading ? <div className="loader-wrap"><div className="spinner" /></div> :
-          tickets.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🎫</div>
-              <div className="empty-title">No Tickets Yet</div>
-              <p className="empty-sub">Publish your first ticket to get started!</p>
-              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setPage('publish')}>Publish Ticket</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {tickets.map(t => (
-                <div key={t._id} style={{ background: 'white', borderRadius: 12, padding: '16px 20px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--card-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 700 }}>{t.boardingStation} → {t.destinationStation}</div>
-                      <div style={{ fontSize: '0.82rem', color: 'var(--mist)', marginTop: 4 }}>
-                        {t.trainName} #{t.trainNumber} · {t.dateOfJourney} · {t.classType} · {t.ticketStatus}
-                      </div>
-                      <div style={{ marginTop: 8 }}>
-                        <span style={{ fontWeight: 700, color: 'var(--rail)', fontSize: '1.1rem' }}>₹{t.price?.toLocaleString('en-IN')}</span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--mist)', marginLeft: 8 }}>{t.numberOfPassengers} passenger{t.numberOfPassengers > 1 ? 's' : ''}</span>
-                      </div>
+        {loading ? (
+          <div className="loader-wrap">
+            <div className="spinner" />
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">🎫</div>
+            <div className="empty-title">No Tickets Yet</div>
+            <p className="empty-sub">
+              Publish your first ticket to get started!
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: 16 }}
+              onClick={() => setPage("publish")}
+            >
+              Publish Ticket
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {tickets.map((t) => (
+              <div
+                key={t._id}
+                style={{
+                  background: "white",
+                  borderRadius: 12,
+                  padding: "16px 20px",
+                  boxShadow: "var(--shadow-sm)",
+                  border: "1px solid var(--card-border)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700 }}>
+                      {t.boardingStation} → {t.destinationStation}
                     </div>
-                    
-                    {/* The new button group with Edit added */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <button className="btn btn-sm" style={{ color: '#c62828', border: '1px solid #ef9a9a', background: '#fce4ec', borderRadius: 8 }}
-                        onClick={() => deleteTicket(t._id)}>
-                        🗑️ Delete
-                      </button>
-                      <button className="btn btn-sm" style={{ color: '#1565c0', border: '1px solid #90caf9', background: '#e3f2fd', borderRadius: 8 }}
-                        onClick={() => {
-                          setEditingTicket(t);
-                          setPage('edit-ticket');
-                        }}>
-                        ✏️ Edit
-                      </button>
+                    <div
+                      style={{
+                        fontSize: "0.82rem",
+                        color: "var(--mist)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {t.trainName} #{t.trainNumber} · {t.dateOfJourney} ·{" "}
+                      {t.classType} · {t.ticketStatus}
                     </div>
+                    <div style={{ marginTop: 8 }}>
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          color: "var(--rail)",
+                          fontSize: "1.1rem",
+                        }}
+                      >
+                        ₹{t.price?.toLocaleString("en-IN")}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "var(--mist)",
+                          marginLeft: 8,
+                        }}
+                      >
+                        {t.numberOfPassengers} passenger
+                        {t.numberOfPassengers > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
 
+                  {/* The new button group with Edit added */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    <button
+                      className="btn btn-sm"
+                      style={{
+                        color: "#c62828",
+                        border: "1px solid #ef9a9a",
+                        background: "#fce4ec",
+                        borderRadius: 8,
+                      }}
+                      onClick={() => deleteTicket(t._id)}
+                    >
+                      🗑️ Delete
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      style={{
+                        color: "#1565c0",
+                        border: "1px solid #90caf9",
+                        background: "#e3f2fd",
+                        borderRadius: 8,
+                      }}
+                      onClick={() => {
+                        setEditingTicket(t);
+                        setPage("edit-ticket");
+                      }}
+                    >
+                      ✏️ Edit
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )
-        }
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1857,56 +2319,54 @@ function EditProfilePage({ setPage, toast }) {
   const { user, updateUser } = useAuth();
 
   const [form, setForm] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    mobile: user?.mobile || ''
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    mobile: user?.mobile || "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const set = key => e =>
-    setForm(prev => ({ ...prev, [key]: e.target.value }));
+  const set = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
   const save = async () => {
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const { data } = await API.put('/users/update', form);
+      const { data } = await API.put("/users/update", form);
 
       // ✅ VERY IMPORTANT FIX
       updateUser(data.user);
 
-      toast('Profile updated successfully ✅');
-      setPage('profile');
-
+      toast("Profile updated successfully ✅");
+      setPage("profile");
     } catch (e) {
-      setError(e.response?.data?.message || 'Update failed');
+      setError(e.response?.data?.message || "Update failed");
     } finally {
       setLoading(false);
     }
   };
 
   if (!user) {
-    setPage('login');
+    setPage("login");
     return null;
   }
 
   return (
     <div className="auth-page">
       <div className="form-wrapper">
-
         <div className="breadcrumb" style={{ marginBottom: 8 }}>
           <button
-            onClick={() => setPage('profile')}
+            onClick={() => setPage("profile")}
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--mist)',
-              cursor: 'pointer',
-              fontSize: '0.82rem',
-              padding: 0
+              background: "none",
+              border: "none",
+              color: "var(--mist)",
+              cursor: "pointer",
+              fontSize: "0.82rem",
+              padding: 0,
             }}
           >
             ← Back to Profile
@@ -1921,35 +2381,26 @@ function EditProfilePage({ setPage, toast }) {
         <div className="form-row">
           <div className="form-group">
             <label>First Name</label>
-            <input
-              value={form.firstName}
-              onChange={set('firstName')}
-            />
+            <input value={form.firstName} onChange={set("firstName")} />
           </div>
 
           <div className="form-group">
             <label>Last Name</label>
-            <input
-              value={form.lastName}
-              onChange={set('lastName')}
-            />
+            <input value={form.lastName} onChange={set("lastName")} />
           </div>
         </div>
 
         <div className="form-group">
           <label>Mobile Number</label>
-          <input
-            value={form.mobile}
-            onChange={set('mobile')}
-          />
+          <input value={form.mobile} onChange={set("mobile")} />
         </div>
 
         <div className="form-group">
           <label>Email (cannot be changed)</label>
           <input
-            value={user?.email || ''}
+            value={user?.email || ""}
             disabled
-            style={{ opacity: 0.6, cursor: 'not-allowed' }}
+            style={{ opacity: 0.6, cursor: "not-allowed" }}
           />
         </div>
 
@@ -1958,9 +2409,8 @@ function EditProfilePage({ setPage, toast }) {
           onClick={save}
           disabled={loading}
         >
-          {loading ? '⏳ Saving...' : '✅ Save Changes'}
+          {loading ? "⏳ Saving..." : "✅ Save Changes"}
         </button>
-
       </div>
     </div>
   );
@@ -1972,36 +2422,57 @@ function Footer({ setPage }) {
     <footer>
       <div className="footer-grid">
         <div>
-          <div className="footer-brand">Train<span>Expert</span> 🚆</div>
+          <div className="footer-brand">
+            Train<span>Expert</span> 🚆
+          </div>
           <p className="footer-desc">
-            India's community platform for sharing extra train tickets. Helping travellers connect, save money, and travel smarter.
+            India's community platform for sharing extra train tickets. Helping
+            travellers connect, save money, and travel smarter.
           </p>
-          <div style={{ marginTop: 20, fontSize: '0.85rem' }}>
+          <div style={{ marginTop: 20, fontSize: "0.85rem" }}>
             <div>📧 support@trainexpert.in</div>
             <div style={{ marginTop: 6 }}>📱 +91 98765 43210</div>
           </div>
         </div>
         <div>
           <div className="footer-heading">Navigation</div>
-          <div className="footer-link" onClick={() => setPage('home')}>Home</div>
-          <div className="footer-link" onClick={() => setPage('login')}>Login / Register</div>
-          <div className="footer-link" onClick={() => setPage('publish')}>Publish Ticket</div>
-          <div className="footer-link" onClick={() => setPage('profile')}>My Profile</div>
+          <div className="footer-link" onClick={() => setPage("home")}>
+            Home
+          </div>
+          <div className="footer-link" onClick={() => setPage("login")}>
+            Login / Register
+          </div>
+          <div className="footer-link" onClick={() => setPage("publish")}>
+            Publish Ticket
+          </div>
+          <div className="footer-link" onClick={() => setPage("profile")}>
+            My Profile
+          </div>
         </div>
         <div>
           <div className="footer-heading">Developer</div>
           <div className="footer-link">📧 dev@trainexpert.in</div>
           <div className="footer-link">🐙 github.com/trainexpert</div>
           <div className="footer-link">💼 linkedin.com/trainexpert</div>
-          <div style={{ marginTop: 20, fontSize: '0.78rem', opacity: 0.5, lineHeight: 1.7 }}>
-            Built with ❤️ using<br />
+          <div
+            style={{
+              marginTop: 20,
+              fontSize: "0.78rem",
+              opacity: 0.5,
+              lineHeight: 1.7,
+            }}
+          >
+            Built with ❤️ using
+            <br />
             MongoDB · Express · React · Node.js
           </div>
         </div>
       </div>
       <div className="footer-bottom">
-        <div>© {new Date().getFullYear()} TrainExpert. All rights reserved.</div>
-        <div style={{ fontSize: '0.8rem', opacity: 0.5 }}>
+        <div>
+          © {new Date().getFullYear()} TrainExpert. All rights reserved.
+        </div>
+        <div style={{ fontSize: "0.8rem", opacity: 0.5 }}>
           Made for Indian Railways passengers 🇮🇳
         </div>
       </div>
@@ -2012,24 +2483,33 @@ function Footer({ setPage }) {
 // ─── Auth Provider ────────────────────────────────────────────
 function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('rts_user')); } catch { return null; }
+    try {
+      return JSON.parse(localStorage.getItem("rts_user"));
+    } catch {
+      return null;
+    }
   });
 
   const login = (token, userData) => {
-    localStorage.setItem('rts_token', token);
-    localStorage.setItem('rts_user', JSON.stringify(userData));
+    localStorage.setItem("rts_token", token);
+    localStorage.setItem("rts_user", JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
-    localStorage.removeItem('rts_token');
-    localStorage.removeItem('rts_user');
+    localStorage.removeItem("rts_token");
+    localStorage.removeItem("rts_user");
     setUser(null);
   };
 
   const updateUser = (data) => {
-    const updated = { ...user, firstName: data.firstName, lastName: data.lastName, mobile: data.mobile };
-    localStorage.setItem('rts_user', JSON.stringify(updated));
+    const updated = {
+      ...user,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      mobile: data.mobile,
+    };
+    localStorage.setItem("rts_user", JSON.stringify(updated));
     setUser(updated);
   };
 
@@ -2040,13 +2520,12 @@ function AuthProvider({ children }) {
   );
 }
 
-
 // ─── Main App ─────────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState('home');
-  const [toastMsg, setToastMsg] = useState('');
+  const [page, setPage] = useState("home");
+  const [toastMsg, setToastMsg] = useState("");
   // ADD THIS STATE:
-  const [editingTicket, setEditingTicket] = useState(null); 
+  const [editingTicket, setEditingTicket] = useState(null);
 
   const toast = (msg) => setToastMsg(msg);
 
@@ -2054,23 +2533,51 @@ export default function App() {
     <AuthProvider>
       <GlobalStyles />
       {/* Reset edit state when navigating from Navbar */}
-      <Navbar page={page} setPage={(p) => { setPage(p); if(p !== 'edit-ticket') setEditingTicket(null); }} />
+      <Navbar
+        page={page}
+        setPage={(p) => {
+          setPage(p);
+          if (p !== "edit-ticket") setEditingTicket(null);
+        }}
+      />
       <main>
-        {page === 'home' && <HomePage setPage={setPage} toast={toast} />}
-        {page === 'login' && <AuthPage mode="login" setPage={setPage} toast={toast} />}
-        {page === 'register' && <AuthPage mode="register" setPage={setPage} toast={toast} />}
-        
+        {page === "home" && <HomePage setPage={setPage} toast={toast} />}
+        {page === "login" && (
+          <AuthPage mode="login" setPage={setPage} toast={toast} />
+        )}
+        {page === "register" && (
+          <AuthPage mode="register" setPage={setPage} toast={toast} />
+        )}
+
         {/* Update PublishPage to accept editing props */}
-        {page === 'publish' && <PublishPage key="publish" setPage={setPage} toast={toast} />}
-        {page === 'edit-ticket' && <PublishPage key="edit" setPage={setPage} toast={toast} editingTicket={editingTicket} setEditingTicket={setEditingTicket} />}
-        
+        {page === "publish" && (
+          <PublishPage key="publish" setPage={setPage} toast={toast} />
+        )}
+        {page === "edit-ticket" && (
+          <PublishPage
+            key="edit"
+            setPage={setPage}
+            toast={toast}
+            editingTicket={editingTicket}
+            setEditingTicket={setEditingTicket}
+          />
+        )}
+
         {/* Pass setEditingTicket to ProfilePage */}
-        {page === 'profile' && <ProfilePage setPage={setPage} toast={toast} setEditingTicket={setEditingTicket} />}
-        
-        {page === 'edit-profile' && <EditProfilePage setPage={setPage} toast={toast} />}
+        {page === "profile" && (
+          <ProfilePage
+            setPage={setPage}
+            toast={toast}
+            setEditingTicket={setEditingTicket}
+          />
+        )}
+
+        {page === "edit-profile" && (
+          <EditProfilePage setPage={setPage} toast={toast} />
+        )}
       </main>
       <Footer setPage={setPage} />
-      {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg('')} />}
+      {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg("")} />}
     </AuthProvider>
   );
 }
