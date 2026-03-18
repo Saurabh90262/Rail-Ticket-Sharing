@@ -4,9 +4,12 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cron = require("node-cron");
-const nodemailer = require("nodemailer"); // 👈 NEW
+
 const crypto = require("crypto"); // 👈 NEW
 require("dotenv").config();
+
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 app.use(cors());
@@ -140,23 +143,6 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-/* ─────────────────────────────────────────
-   OTP & EMAIL SETUP
-───────────────────────────────────────── */
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  // This helps bypass some strict cloud firewall issues
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
 const generateOTPToken = (email) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hash = crypto
@@ -205,21 +191,21 @@ app.post("/api/auth/request-otp", async (req, res) => {
 
     const { otp, token } = generateOTPToken(email);
 
-    await transporter.sendMail({
-      from: `"TrainExpert" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `${otp} is your TrainExpert Verification Code`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
-          <h2 style="color: #0d0f1a;">TrainExpert Verification</h2>
-          <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
-          <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-            <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
-          </div>
-          <p style="font-size: 0.8rem; color: #999;">If you didn't request this, you can safely ignore this email.</p>
-        </div>
-      `,
-    });
+    await resend.emails.send({
+  from: 'TrainExpert <onboarding@resend.dev>', // use this until you add a domain
+  to: email,
+  subject: `${otp} is your TrainExpert Verification Code`,
+  html: `
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
+      <h2 style="color: #0d0f1a;">TrainExpert Verification</h2>
+      <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
+      <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+        <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
+      </div>
+      <p style="font-size: 0.8rem; color: #999;">If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `,
+});
 
     res.json({ token, message: "OTP sent to email" });
   } catch (err) {
