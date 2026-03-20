@@ -4,7 +4,6 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cron = require("node-cron");
-const nodemailer = require("nodemailer"); // 👈 NEW
 const crypto = require("crypto"); // 👈 NEW
 require("dotenv").config();
 
@@ -141,30 +140,8 @@ const authMiddleware = (req, res, next) => {
 };
 
 /* ─────────────────────────────────────────
-    OTP & EMAIL SETUP
+   OTP & EMAIL SETUP
 ───────────────────────────────────────── */
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL/TLS
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    // This prevents connection rejection by cloud firewalls
-    rejectUnauthorized: false,
-  },
-});
-
-// 👈 Add this: Verifies the connection on server startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Nodemailer Setup Error:", error);
-  } else {
-    console.log("✅ Mail Server is ready to send emails");
-  }
-});
 
 const generateOTPToken = (email) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -214,21 +191,27 @@ app.post("/api/auth/request-otp", async (req, res) => {
 
     const { otp, token } = generateOTPToken(email);
 
-    await transporter.sendMail({
-      from: `"TrainExpert" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `${otp} is your TrainExpert Verification Code`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
-          <h2 style="color: #0d0f1a;">TrainExpert Verification</h2>
-          <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
-          <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-            <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
+    const emailResponse = await fetch(process.env.GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        to: email,
+        subject: `${otp} is your TrainExpert Verification Code`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 400px; margin: 0 auto;">
+            <h2 style="color: #0d0f1a;">TrainExpert Verification</h2>
+            <p style="color: #6b7080;">Use the code below to verify your email. Valid for 5 minutes.</p>
+            <div style="background: #f0f2f8; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+              <h1 style="color: #e8334a; letter-spacing: 5px; margin: 0;">${otp}</h1>
+            </div>
+            <p style="font-size: 0.8rem; color: #999;">If you didn't request this, you can safely ignore this email.</p>
           </div>
-          <p style="font-size: 0.8rem; color: #999;">If you didn't request this, you can safely ignore this email.</p>
-        </div>
-      `,
+        `,
+      }),
     });
+
+    if (!emailResponse.ok) {
+      throw new Error("Failed to trigger Google Script Mailer");
+    }
 
     res.json({ token, message: "OTP sent to email" });
   } catch (err) {
