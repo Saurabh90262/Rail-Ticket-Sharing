@@ -670,6 +670,45 @@ const GlobalStyles = () => (
   .station-dropdown div:hover{
   background:#f5f5f5;
 }
+  /* 👇 NEW FOOTER ICONS CSS 👇 */
+    .footer-social-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .social-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      transition: var(--transition);
+      background: rgba(255,255,255,0.02);
+    }
+    .social-icon:hover {
+      background: var(--rail);
+      border-color: var(--rail);
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(232,51,74,0.3);
+    }
+    .footer-dev-email {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-dev-email:hover {
+      color: white;
+    }
   `}</style>
 );
 
@@ -717,7 +756,9 @@ function Navbar({ page, setPage }) {
                 {user?.firstName?.[0] || ""}
                 {user?.lastName?.[0] || ""}
               </div>
-              <span className="profile-name">{user.firstName} {user.lastName}</span>
+              <span className="profile-name">
+                {user.firstName} {user.lastName}
+              </span>
               <span style={{ fontSize: "0.7rem", opacity: 0.5 }}>▼</span>
             </div>
             {open && (
@@ -944,7 +985,7 @@ function AuthPage({ setPage, toast, mode }) {
                 <input
                   value={form.firstName}
                   onChange={set("firstName")}
-                  placeholder="Arjun"
+                  placeholder="Harsh"
                 />
               </div>
               <div className="form-group">
@@ -2469,9 +2510,98 @@ function Footer({ setPage }) {
         </div>
         <div>
           <div className="footer-heading">Developer</div>
-          <div className="footer-link">📧 dev@trainexpert.in</div>
-          <div className="footer-link">🐙 github.com/trainexpert</div>
-          <div className="footer-link">💼 linkedin.com/trainexpert</div>
+
+          {/* Email Row with SVG Icon */}
+          <a href="mailto:saurabh90262@gmail.com" className="footer-dev-email">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            saurabh90262@gmail.com
+          </a>
+
+          {/* Circular Social Icons */}
+          <div className="footer-social-row">
+            {/* GitHub */}
+            <a
+              href="https://github.com/Saurabh90262"
+              target="_blank"
+              rel="noreferrer"
+              className="social-icon"
+              title="GitHub"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+            </a>
+
+            {/* LinkedIn */}
+            <a
+              href="https://www.linkedin.com/in/saurabh-kumar-255911288"
+              target="_blank"
+              rel="noreferrer"
+              className="social-icon"
+              title="LinkedIn"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+            </a>
+
+            {/* Portfolio / Website */}
+            <a
+              href="https://saurabh90262.netlify.app/"
+              target="_blank"
+              rel="noreferrer"
+              className="social-icon"
+              title="Portfolio"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </a>
+          </div>
+
           <div
             style={{
               marginTop: 20,
@@ -2480,7 +2610,7 @@ function Footer({ setPage }) {
               lineHeight: 1.7,
             }}
           >
-            Built with ❤️ using
+            Built with ❤️ by <strong>Saurabh (Sashi)</strong> using
             <br />
             MongoDB · Express · React · Node.js
           </div>
