@@ -1895,7 +1895,7 @@ function HomePage({ setPage, toast }) {
           </div>
 
           <h1 className="hero-title">
-            Share Extra Tickets,
+            Share and Buy Extra Tickets,
             <br />
             <em>Help Fellow Travellers</em>
           </h1>
