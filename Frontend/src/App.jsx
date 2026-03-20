@@ -2670,12 +2670,33 @@ function AuthProvider({ children }) {
 
 // ─── Main App ─────────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState("home");
+  // 1. Get the initial page from the URL hash when the site loads
+  const getPageFromHash = () => {
+    const hash = window.location.hash.replace("#", "");
+    return hash || "home";
+  };
+
+  const [page, setPageState] = useState(getPageFromHash());
   const [toastMsg, setToastMsg] = useState("");
-  // ADD THIS STATE:
   const [editingTicket, setEditingTicket] = useState(null);
 
   const toast = (msg) => setToastMsg(msg);
+
+  // 2. Custom setPage that updates React state AND the browser's URL History
+  const setPage = useCallback((newPage) => {
+    setPageState(newPage);
+    window.history.pushState(null, "", `#${newPage}`);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // Smooth scroll to top on page change
+  }, []);
+
+  // 3. Listen for the Browser Back/Forward buttons
+  useEffect(() => {
+    const handleBackForward = () => {
+      setPageState(getPageFromHash());
+    };
+    window.addEventListener("popstate", handleBackForward);
+    return () => window.removeEventListener("popstate", handleBackForward);
+  }, []);
 
   return (
     <AuthProvider>
