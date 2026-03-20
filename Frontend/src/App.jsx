@@ -605,9 +605,27 @@ const GlobalStyles = () => (
 
     /* Responsive helpers */
     @media (max-width: 768px) {
+      html, body { overflow-x: hidden; width: 100%; position: relative; }
       .tickets-grid { grid-template-columns: 1fr; }
       .stats-strip { grid-template-columns: 1fr; }
-      .navbar { padding: 0 16px; }
+      
+      /* Shrink Navbar & hide name to save space */
+      .navbar { padding: 0 12px; }
+      .logo { font-size: 1.1rem; }
+      .nav-right { gap: 6px; }
+      .btn { padding: 8px 12px; font-size: 0.8rem; }
+      .profile-trigger { padding: 6px 10px; font-size: 0.85rem; gap: 6px; }
+      .profile-name { display: none; } 
+      
+      /* Fix Hero section overflow */
+      .hero-content { padding: 40px 16px 30px; width: 100%; max-width: 100vw; box-sizing: border-box; }
+      .hero-title { font-size: 2.2rem; word-wrap: break-word; }
+      .hero-badge { 
+        font-size: 0.75rem; padding: 6px 12px; height: auto; 
+        text-align: center; line-height: 1.4; display: inline-block; 
+        white-space: normal; max-width: 95%;
+      }
+      .search-box { padding: 16px; width: 100%; box-sizing: border-box; }
     }
 
     .tag { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; }
@@ -699,7 +717,7 @@ function Navbar({ page, setPage }) {
                 {user?.firstName?.[0] || ""}
                 {user?.lastName?.[0] || ""}
               </div>
-              {user.firstName} {user.lastName}
+              <span className="profile-name">{user.firstName} {user.lastName}</span>
               <span style={{ fontSize: "0.7rem", opacity: 0.5 }}>▼</span>
             </div>
             {open && (
