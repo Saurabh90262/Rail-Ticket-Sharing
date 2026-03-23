@@ -686,15 +686,22 @@ const GlobalStyles = () => (
       justify-content: center;
       color: rgba(255,255,255,0.7);
       text-decoration: none;
-      transition: var(--transition);
       background: rgba(255,255,255,0.02);
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
     .social-icon:hover {
-      background: var(--rail);
-      border-color: var(--rail);
+      /* 1. Glittering blue color effect */
+      /* A bright, neon blue linear gradient background */
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      border-color: #00f2fe;
       color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(232,51,74,0.3);
+
+      /* 2. Bubble enlargement effect */
+      /* Scale up to 125% of its size for a bold "pop" */
+      transform: scale(1.25) translateY(-3px); /* Also moves it slightly up for a floating feel */
+
+      /* 3. Intense, layered glittering blue shadow effect */
+      box-shadow: 0 10px 30px rgba(0, 242, 254, 0.7), 0 0 18px rgba(79, 172, 254, 0.9);
     }
     .footer-dev-email {
       display: flex;
@@ -704,10 +711,12 @@ const GlobalStyles = () => (
       font-size: 0.95rem;
       color: rgba(255,255,255,0.8);
       text-decoration: none;
-      transition: color 0.2s;
+      transition: all 0.3s ease;
     }
     .footer-dev-email:hover {
-      color: white;
+      /* Make the email text glow blue on hover too */
+      color: #00f2fe;
+      text-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
     }
   `}</style>
 );
