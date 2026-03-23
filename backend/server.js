@@ -79,22 +79,34 @@ ticketSchema.index({ dateOfJourney: 1 });
 
 const Ticket = mongoose.model("Ticket", ticketSchema);
 /* ─────────────────────────────────────────
-   AUTO DELETE OLD TICKETS
+   AUTO DELETE OLD TICKETS (Fixed for Free Hosting)
 ───────────────────────────────────────── */
-
-cron.schedule("0 3 * * *", async () => {
+const cleanupOldTickets = async () => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    // 1. Get today's date in YYYY-MM-DD format (Adjusted for Indian Standard Time)
+    const today = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     const result = await Ticket.deleteMany({
       dateOfJourney: { $lt: today },
     });
 
-    console.log(`🧹 Old tickets deleted: ${result.deletedCount}`);
+    if (result.deletedCount > 0) {
+      console.log(
+        `🧹 Auto-Cleanup: Deleted ${result.deletedCount} old tickets.`,
+      );
+    }
   } catch (err) {
     console.error("Auto delete error:", err);
   }
-});
+};
+
+// 👉 Fix 1: Run the cleanup immediately every time the server starts/wakes up
+cleanupOldTickets();
+
+// 👉 Fix 2: Schedule it to try running every 4 hours instead of just at 3 AM
+cron.schedule("0 */4 * * *", cleanupOldTickets);
 
 /* ─────────────────────────────────────────
    Station Schema
@@ -457,7 +469,11 @@ app.get("/api/tickets", async (req, res) => {
     const boardingCode = boarding?.split("-")[0]?.trim();
     const destinationCode = destination?.split("-")[0]?.trim();
 
-    const baseQuery = {};
+    // 👇 NEW: Always filter out past dates so they NEVER show up on the frontend
+    const today = new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const baseQuery = { dateOfJourney: { $gte: today } };
 
     if (boardingCode)
       baseQuery.boardingStation = { $regex: boardingCode, $options: "i" };
