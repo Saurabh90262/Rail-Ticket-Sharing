@@ -643,6 +643,34 @@ app.delete("/api/tickets/:id", authMiddleware, async (req, res) => {
   }
 });
 
+/* ─────────────────────────────────────────
+   SERVER WAKE-UP PING ROUTE
+───────────────────────────────────────── */
+app.get("/api/ping", (req, res) => {
+  res.status(200).json({ message: "Server is awake!" });
+});
+
+/* ─────────────────────────────────────────
+   KEEP-ALIVE FUNCTION (Every 14 Minutes)
+───────────────────────────────────────── */
+// ⚠️ IMPORTANT: Replace this URL with your ACTUAL Render backend URL!
+// Add /api/ping to the end!
+const backendUrl = "https://rail-ticket-sharing-backend.onrender.com/api/ping";
+
+setInterval(
+  async () => {
+    try {
+      const response = await fetch(backendUrl);
+      if (response.ok) {
+        console.log("⏰ Kept server awake!");
+      }
+    } catch (err) {
+      console.error("❌ Keep-awake failed:", err.message);
+    }
+  },
+  14 * 60 * 1000,
+); // 14 minutes
+
 /* ───────────────────────────────────────── */
 
 const PORT = process.env.PORT || 5000;
