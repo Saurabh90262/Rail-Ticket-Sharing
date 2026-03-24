@@ -4,12 +4,71 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cron = require("node-cron");
+const fs = require("fs"); // 👈 ADD THIS LINE TO READ THE GEOJSON
 const crypto = require("crypto"); // 👈 NEW
 require("dotenv").config();
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+/* ─────────────────────────────────────────
+   GEOJSON MEMORY LOADER & HAVERSINE MATH
+   (Does not touch MongoDB)
+───────────────────────────────────────── */
+const stationGeoData = {};
+
+try {
+  // 1. Read and parse the local GeoJSON file
+  const rawData = fs.readFileSync('./india_railway_stations.geojson', 'utf8');
+  const geoJson = JSON.parse(rawData);
+  
+  // 2. Convert it into a clean dictionary for instant lookups
+  geoJson.features.forEach(feature => {
+    const props = feature.properties;
+    if (props && props.code && props.lat && props.long) { 
+      stationGeoData[props.code.trim().toUpperCase()] = {
+        name: props.name,
+        lat: parseFloat(props.lat),
+        lng: parseFloat(props.long)
+      };
+    }
+  });
+  console.log(`🗺️ Loaded ${Object.keys(stationGeoData).length} stations from GeoJSON.`);
+} catch (err) {
+  console.warn("⚠️ Could not load india_railway_stations.geojson", err.message);
+}
+
+// 3. The Math to calculate kilometers between coordinates
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  return R * c; 
+}
+
+// 4. Get all station codes within 50km
+function getNearbyStationCodes(targetCode, radiusKm = 50) {
+  if (!targetCode) return [];
+  const target = stationGeoData[targetCode.toUpperCase()];
+  if (!target) return []; 
+
+  const nearbyCodes = [];
+  for (const [code, coords] of Object.entries(stationGeoData)) {
+    if (code !== targetCode.toUpperCase()) {
+      const distance = getDistanceFromLatLonInKm(target.lat, target.lng, coords.lat, coords.lng);
+      if (distance <= radiusKm) {
+        nearbyCodes.push(code);
+      }
+    }
+  }
+  return nearbyCodes;
+}
 
 /* ─────────────────────────────────────────
    MongoDB Connection
@@ -569,9 +628,70 @@ app.get("/api/tickets", async (req, res) => {
       },
     ]);
 
+    /* ───────── 3. Nearby Station Matches (100km Radius) ───────── */
+    let nearbyOptions = [];
+    
+    // 1. Get nearby codes (100km radius)
+    const nearbyBoardingCodes = getNearbyStationCodes(boardingCode, 100); 
+    const nearbyDestCodes = getNearbyStationCodes(destinationCode, 100);
+
+    // 2. Create the expanded arrays (Exact Searched Code + Nearby Codes)
+    const expandedBoarding = boardingCode ? [boardingCode, ...nearbyBoardingCodes] : nearbyBoardingCodes;
+    const expandedDest = destinationCode ? [destinationCode, ...nearbyDestCodes] : nearbyDestCodes;
+
+    // 3. Helper to escape weird characters in station codes so Regex doesn't crash
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    if (expandedBoarding.length > 0 && expandedDest.length > 0) {
+      
+      // 4. Create an array of clean, safe RegExp objects for MongoDB
+      const boardingRegexArray = expandedBoarding.map(code => new RegExp(`^${escapeRegex(code)}`, "i"));
+      const destRegexArray = expandedDest.map(code => new RegExp(`^${escapeRegex(code)}`, "i"));
+
+      const nearbyQuery = { 
+        dateOfJourney: { $gte: today },
+        boardingStation: { $in: boardingRegexArray }, // 👈 Using $in instead of a massive string!
+        destinationStation: { $in: destRegexArray }
+      };
+
+      // 5. Exclude the EXACT route so we don't show duplicate tickets in the "Nearby" section
+      if (boardingCode && destinationCode) {
+        nearbyQuery.$nor = [
+          {
+            boardingStation: { $regex: `^${escapeRegex(boardingCode)}`, $options: "i" },
+            destinationStation: { $regex: `^${escapeRegex(destinationCode)}`, $options: "i" }
+          }
+        ];
+      }
+
+      nearbyOptions = await Ticket.aggregate([
+        { $match: nearbyQuery },
+        {
+          $addFields: {
+            statusPriority: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$ticketStatus", "Confirmed"] }, then: 1 },
+                  { case: { $eq: ["$ticketStatus", "RAC"] }, then: 2 },
+                  { case: { $eq: ["$ticketStatus", "Waiting List"] }, then: 3 },
+                ],
+                default: 4,
+              },
+            },
+          },
+        },
+        { $sort: { statusPriority: 1, dateOfJourney: 1 } },
+        { $limit: 15 }, // Cap at 15 so we don't overwhelm the UI
+        { $lookup: { from: "users", localField: "userId", foreignField: "_id", as: "userId" } },
+        { $unwind: "$userId" },
+      ]);
+    }
+
+    // Send all three arrays back to React!
     res.json({
       exactMatches,
       otherOptions,
+      nearbyOptions
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

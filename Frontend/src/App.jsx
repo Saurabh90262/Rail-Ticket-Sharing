@@ -1845,6 +1845,7 @@ function HomePage({ setPage, toast }) {
   const { user } = useAuth();
   const [exactTickets, setExactTickets] = useState([]);
   const [otherTickets, setOtherTickets] = useState([]);
+  const [nearbyTickets, setNearbyTickets] = useState([]); // 👈 1. ADD THIS
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState({
     boarding: "",
@@ -1866,6 +1867,7 @@ function HomePage({ setPage, toast }) {
 
       setExactTickets(data.exactMatches || []);
       setOtherTickets(data.otherOptions || []);
+      setNearbyTickets(data.nearbyOptions || []); // 👈 2. ADD THIS
     } catch (e) {
       console.error(e);
     } finally {
@@ -2113,13 +2115,15 @@ function HomePage({ setPage, toast }) {
       </section>
 
       {/* Tickets Section remains same */}
-      <section className="section">
+     {/* 👇 Tickets Section 👇 */}
+      <section className="section animated-bg">
         {loading ? (
           <div className="loader-wrap">
             <div className="spinner" />
           </div>
         ) : (
           <>
+            {/* 1. EXACT MATCHES */}
             {exactTickets.length > 0 && (
               <>
                 <h2 className="section-title">🎯 Exact Match</h2>
@@ -2140,6 +2144,7 @@ function HomePage({ setPage, toast }) {
               </>
             )}
 
+            {/* 2. OTHER DATES */}
             {otherTickets.length > 0 && (
               <>
                 <div style={{ marginTop: 60 }} />
@@ -2162,7 +2167,31 @@ function HomePage({ setPage, toast }) {
               </>
             )}
 
-            {exactTickets.length === 0 && otherTickets.length === 0 && (
+            {/* 3. NEARBY STATIONS (The code you just asked about!) */}
+            {nearbyTickets.length > 0 && (
+              <>
+                <div style={{ marginTop: 60 }} />
+
+                <h2 className="section-title">📍 Nearby Station Alternatives</h2>
+                <p className="section-sub">
+                  Tickets available from stations within 100km of your search
+                </p>
+
+                <div className="tickets-grid">
+                  {nearbyTickets.map((t) => (
+                    <TicketCard
+                      key={t._id}
+                      ticket={t}
+                      isLoggedIn={!!user}
+                      setPage={setPage}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 4. UPDATED EMPTY STATE */}
+            {exactTickets.length === 0 && otherTickets.length === 0 && nearbyTickets.length === 0 && (
               <div className="empty-state">
                 <div className="empty-icon">🚂</div>
                 <div className="empty-title">No Tickets Found</div>
